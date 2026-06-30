@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Daily QR Scanner</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+      --glass-bg: rgba(255, 255, 255, 0.03);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #6366f1;
+      --success: #10b981;
+      --danger: #ef4444;
+      --card-radius: 24px;
+      --btn-radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      padding-bottom: 40px;
+    }
+
+    header {
+      text-align: center;
+      margin-top: 20px;
+      margin-bottom: 10px;
+    }
+
+    header h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      background: linear-gradient(to right, #fff, var(--text-muted));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    header p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--card-radius);
+      padding: 24px;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 100%;
+      padding: 18px;
+      border: none;
+      border-radius: var(--btn-radius);
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+      cursor: pointer;
+      transition: transform 0.2s ease, opacity 0.2s ease, background-color 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary { background: var(--primary); }
+    .btn-success { background: var(--success); }
+    .btn-danger { background: var(--danger); }
+    .btn-secondary { background: rgba(255, 255, 255, 0.08); border: 1px solid var(--glass-border); }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .slide-panel {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .slide-panel.open {
+      max-height: 200px;
+      margin-top: 14px;
+    }
+
+    .mode-indicators {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .sub-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .input-wrapper {
+      position: relative;
+      width: 100%;
+    }
+
+    .text-input {
+      width: 100%;
+      padding: 16px;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--btn-radius);
+      color: #fff;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+
+    .text-input:focus {
+      border-color: var(--primary);
+    }
+
+    #scanner-container {
+      width: 100%;
+      border-radius: var(--btn-radius);
+      overflow: hidden;
+      border: 2px dashed rgba(255, 255, 255, 0.2);
+      position: relative;
+      background: #000;
+    }
+
+    #qr-reader {
+      width: 100% !important;
+      border: none !important;
+    }
+
+    #qr-reader__dashboard, #qr-reader__header {
+      display: none !important;
+    }
+
+    .result-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+    }
+
+    .result-table td {
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 0.9rem;
+    }
+
+    .result-table td:first-child {
+      color: var(--text-muted);
+      font-weight: 500;
+      width: 40%;
+    }
+
+    .result-table td:last-child {
+      color: var(--text-main);
+      font-weight: 600;
+      text-align: right;
+    }
+
+    .result-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .badge-pickup { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .badge-return { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+
+    .toast-container {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: calc(100% - 40px);
+      max-width: 400px;
+    }
+
+    .toast {
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-left: 4px solid var(--primary);
+      padding: 16px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: toastIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    @keyframes toastIn {
+      from { transform: translateY(50px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .toast.success { border-left-color: var(--success); }
+    .toast.error { border-left-color: var(--danger); }
+    .toast.warning { border-left-color: #f59e0b; }
+
+    .toast-content h4 {
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .toast-content p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .spinner-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 9998;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-left-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>Daily QR Scanner</h1>
+      <p>Professional Warehouse Management</p>
+    </header>
+
+    <div class="card" id="home-panel">
+      <button class="btn btn-primary" id="btn-daily-scan">
+        <span class="material-icons">qr_code_scanner</span>
+        Daily Scan
+      </button>
+
+      <div class="slide-panel" id="mode-panel">
+        <div class="mode-indicators">
+          <button class="btn btn-success" id="btn-mode-pickup">
+            <span class="material-icons">local_shipping</span>
+            Pickup
+          </button>
+          <button class="btn btn-danger" id="btn-mode-return">
+            <span class="material-icons">assignment_return</span>
+            Return
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card hidden" id="action-selection-panel">
+      <div class="sub-panel">
+        <div class="mode-indicators">
+          <button class="btn btn-secondary" id="btn-action-camera">
+            <span class="material-icons">photo_camera</span>
+            Camera
+          </button>
+          <button class="btn btn-secondary" id="btn-action-manual">
+            <span class="material-icons">keyboard</span>
+            Manual
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card hidden" id="input-panel">
+      <div class="sub-panel">
+        <div id="scanner-container" class="hidden">
+          <div id="qr-reader"></div>
+        </div>
+        
+        <div id="manual-container" class="hidden">
+          <div class="input-wrapper">
+            <input type="text" id="awb-input" class="text-input" placeholder="Enter or Scan AWB Number">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card hidden" id="result-panel">
+      <div class="sub-panel">
+        <h3 style="font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+          <span class="material-icons" style="color: var(--primary)">description</span>
+          Shipment Details
+        </h3>
+        <table class="result-table">
+          <tr>
+            <td>AWB</td>
+            <td id="res-awb">-</td>
+          </tr>
+          <tr>
+            <td>Order ID</td>
+            <td id="res-order-id">-</td>
+          </tr>
+          <tr>
+            <td>Type</td>
+            <td id="res-type">-</td>
+          </tr>
+          <tr>
+            <td>Status</td>
+            <td id="res-status">-</td>
+          </tr>
+          <tr>
+            <td>Mode</td>
+            <td id="res-mode">-</td>
+          </tr>
+          <tr>
+            <td>Date</td>
+            <td id="res-date">-</td>
+          </tr>
+          <tr>
+            <td>Time</td>
+            <td id="res-time">-</td>
+          </tr>
+        </table>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+          <button class="btn btn-success" id="btn-save">
+            <span class="material-icons">save</span>
+            Save Entry
+          </button>
+          <button class="btn btn-secondary" id="btn-close">
+            <span class="material-icons">close</span>
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="spinner-overlay hidden" id="loading-spinner">
+    <div class="spinner"></div>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <script>
+    const APPS_SCRIPT_URL = "YOUR_APPS_SCRIPT_WEB_APP_URL";
+
+    const state = {
+      currentMode: null, 
+      currentMethod: null, 
+      html5QrcodeScanner: null,
+      scannedData: null
+    };
+
+    const ui = {
+      btnDailyScan: document.getElementById('btn-daily-scan'),
+      modePanel: document.getElementById('mode-panel'),
+      btnModePickup: document.getElementById('btn-mode-pickup'),
+      btnModeReturn: document.getElementById('btn-mode-return'),
+      actionSelectionPanel: document.getElementById('action-selection-panel'),
+      btnActionCamera: document.getElementById('btn-action-camera'),
+      btnActionManual: document.getElementById('btn-action-manual'),
+      inputPanel: document.getElementById('input-panel'),
+      scannerContainer: document.getElementById('scanner-container'),
+      manualContainer: document.getElementById('manual-container'),
+      awbInput: document.getElementById('awb-input'),
+      resultPanel: document.getElementById('result-panel'),
+      btnSave: document.getElementById('btn-save'),
+      btnClose: document.getElementById('btn-close'),
+      spinner: document.getElementById('loading-spinner'),
+      toastContainer: document.getElementById('toast-container'),
+      resAwb: document.getElementById('res-awb'),
+      resOrderId: document.getElementById('res-order-id'),
+      resType: document.getElementById('res-type'),
+      resStatus: document.getElementById('res-status'),
+      resMode: document.getElementById('res-mode'),
+      resDate: document.getElementById('res-date'),
+      resTime: document.getElementById('res-time')
+    };
+
+    function showToast(title, message, type = 'success') {
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      
+      let icon = 'check_circle';
+      if (type === 'error') icon = 'error';
+      if (type === 'warning') icon = 'warning';
+
+      toast.innerHTML = `
+        <span class="material-icons">${icon}</span>
+        <div class="toast-content">
+          <h4>${title}</h4>
+          <p>${message}</p>
+        </div>
+      `;
+      ui.toastContainer.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(20px)';
+        toast.style.transition = 'all 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    function showSpinner(show) {
+      if (show) ui.spinner.classList.remove('hidden');
+      else ui.spinner.classList.add('hidden');
+    }
+
+    async function makeApiCall(data) {
+      showSpinner(true);
+      try {
+        const response = await fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'cors',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(data)
+        });
+        const json = await response.json();
+        showSpinner(false);
+        return json;
+      } catch (error) {
+        showSpinner(false);
+        showToast('Network Error', 'Failed to connect to server backend', 'error');
+        return { success: false, error: error.toString() };
+      }
+    }
+
+    function getFormattedDateTime() {
+      const now = new Date();
+      const date = now.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const time = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+      return { date, time };
+    }
+
+    async function handleAwbSubmission(awb) {
+      if (!awb || awb.trim() === "") return;
+      
+      await stopCamera();
+      
+      const response = await makeApiCall({
+        action: 'fetchDelhivery',
+        awb: awb.trim()
+      });
+
+      if (response && response.success) {
+        const dateTime = getFormattedDateTime();
+        state.scannedData = {
+          awb: response.data.awb,
+          orderId: response.data.orderId,
+          type: response.data.type,
+          status: response.data.status,
+          mode: state.currentMode,
+          date: dateTime.date,
+          time: dateTime.time
+        };
+
+        ui.resAwb.textContent = state.scannedData.awb;
+        ui.resOrderId.textContent = state.scannedData.orderId;
+        ui.resType.textContent = state.scannedData.type;
+        ui.resStatus.textContent = state.scannedData.status;
+        ui.resMode.innerHTML = `<span class="badge badge-${state.currentMode.toLowerCase()}">${state.currentMode}</span>`;
+        ui.resDate.textContent = state.scannedData.date;
+        ui.resTime.textContent = state.scannedData.time;
+
+        ui.resultPanel.classList.remove('hidden');
+        ui.resultPanel.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        showToast('Fetch Failed', (response && response.error) || 'Invalid AWB or connection failure', 'error');
+        if (state.currentMethod === 'camera') {
+          startCamera();
+        }
+      }
+    }
+
+    async function startCamera() {
+      ui.scannerContainer.classList.remove('hidden');
+      ui.inputPanel.classList.remove('hidden');
+      
+      state.html5QrcodeScanner = new Html5Qrcode("qr-reader");
+      const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+      
+      try {
+        await state.html5QrcodeScanner.start(
+          { facingMode: "environment" },
+          config,
+          (decodedText) => {
+            ui.awbInput.value = decodedText;
+            handleAwbSubmission(decodedText);
+          },
+          () => {}
+        );
+      } catch (err) {
+        showToast('Camera Error', 'Could not open back camera initialization failed', 'error');
+      }
+    }
+
+    async function stopCamera() {
+      if (state.html5QrcodeScanner && state.html5QrcodeScanner.isScanning) {
+        try {
+          await state.html5QrcodeScanner.stop();
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      ui.scannerContainer.classList.add('hidden');
+    }
+
+    function initInterface() {
+      ui.btnDailyScan.addEventListener('click', () => {
+        ui.modePanel.classList.toggle('open');
+      });
+
+      ui.btnModePickup.addEventListener('click', () => {
+        state.currentMode = 'Pickup';
+        ui.actionSelectionPanel.classList.remove('hidden');
+        ui.actionSelectionPanel.scrollIntoView({ behavior: 'smooth' });
+      });
+
+      ui.btnModeReturn.addEventListener('click', () => {
+        state.currentMode = 'Return';
+        ui.actionSelectionPanel.classList.remove('hidden');
+        ui.actionSelectionPanel.scrollIntoView({ behavior: 'smooth' });
+      });
+
+      ui.btnActionCamera.addEventListener('click', async () => {
+        state.currentMethod = 'camera';
+        ui.manualContainer.classList.add('hidden');
+        await startCamera();
+      });
+
+      ui.btnActionManual.addEventListener('click', async () => {
+        state.currentMethod = 'manual';
+        await stopCamera();
+        ui.inputPanel.classList.remove('hidden');
+        ui.manualContainer.classList.remove('hidden');
+        ui.awbInput.value = '';
+        ui.awbInput.focus();
+      });
+
+      ui.awbInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          handleAwbSubmission(ui.awbInput.value);
+        }
+      });
+
+      ui.btnSave.addEventListener('click', async () => {
+        if (!state.scannedData) return;
+
+        const response = await makeApiCall({
+          action: 'saveData',
+          payload: state.scannedData
+        });
+
+        if (response && response.success) {
+          showToast('Success', 'Record appended to log sheet perfectly.', 'success');
+          ui.awbInput.value = '';
+          ui.resultPanel.classList.add('hidden');
+          state.scannedData = null;
+          
+          if (state.currentMethod === 'camera') {
+            await startCamera();
+          } else {
+            ui.awbInput.focus();
+          }
+        } else if (response && response.duplicate) {
+          showToast('Duplicate Found', `Already Saved\nDate: ${response.date}\nTime: ${response.time}`, 'warning');
+        } else {
+          showToast('Save Failed', (response && response.error) || 'Unknown error occurred while logging data', 'error');
+        }
+      });
+
+      ui.btnClose.addEventListener('click', async () => {
+        await stopCamera();
+        ui.resultPanel.classList.add('hidden');
+        ui.inputPanel.classList.add('hidden');
+        ui.manualContainer.classList.add('hidden');
+        ui.actionSelectionPanel.classList.add('hidden');
+        ui.modePanel.classList.remove('open');
+        ui.awbInput.value = '';
+        state.currentMode = null;
+        state.currentMethod = null;
+        state.scannedData = null;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', initInterface);
+  </script>
+</body>
+</html>
