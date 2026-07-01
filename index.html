@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Daily QR Scanner - Bulk Pro</title>
+  <title>Daily QR Scanner - Live Bulk Sync</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <script src="https://unpkg.com/html5-qrcode"></script>
@@ -95,11 +95,17 @@
     [data-theme="dark"] .tree-header { background: rgba(255, 255, 255, 0.02); }
     .tree-header-left { display: flex; align-items: center; gap: 8px; }
     .tree-chips { display: flex; gap: 6px; }
-    .chip { font-size: 0.75rem; padding: 2px 8px; border-radius: 6px; font-weight: 600; }
-    .chip-p { background: rgba(16, 185, 129, 0.15); color: #059669; }
+    
+    /* Interactive Clickable Chips */
+    .chip { font-size: 0.75rem; padding: 4px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+    .chip:active { transform: scale(0.9); }
+    .chip-p { background: rgba(16, 185, 129, 0.15); color: #059669; border: 1px solid transparent; }
+    .chip-p:hover { border-color: #059669; background: rgba(16, 185, 129, 0.25); }
     [data-theme="dark"] .chip-p { color: #34d399; }
-    .chip-r { background: rgba(239, 68, 68, 0.15); color: #dc2626; }
+    .chip-r { background: rgba(239, 68, 68, 0.15); color: #dc2626; border: 1px solid transparent; }
+    .chip-r:hover { border-color: #dc2626; background: rgba(239, 68, 68, 0.25); }
     [data-theme="dark"] .chip-r { color: #f87171; }
+    
     .tree-content { padding: 10px 14px; background: rgba(255, 255, 255, 0.3); display: none; flex-direction: column; gap: 6px; }
     [data-theme="dark"] .tree-content { background: rgba(0, 0, 0, 0.1); }
 
@@ -115,6 +121,13 @@
     @keyframes spin { to { transform: rotate(360deg); } }
 
     .queue-box { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(245, 158, 11, 0.1); border: 1px solid var(--warning); border-radius: var(--btn-radius); font-weight: 600; font-size: 0.95rem; }
+
+    /* NEW STYLING: Elegant Confirmation Popup Overlays */
+    .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(6px); z-index: 10000; display: flex; justify-content: center; align-items: center; animation: fadeIn 0.2s ease; }
+    .modal-card { width: 90%; max-width: 380px; background: var(--glass-bg); backdrop-filter: blur(25px); border: 1px solid var(--glass-border); border-radius: 24px; padding: 24px; box-shadow: var(--panel-shadow); text-align: center; }
+    .modal-card h4 { font-size: 1.2rem; font-weight: 700; margin-bottom: 10px; color: var(--text-main); }
+    .modal-card p { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; line-height: 1.4; }
+    .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   </style>
 </head>
 <body>
@@ -211,11 +224,24 @@
     </div>
   </div>
 
+  <!-- NEW UI MODAL: Interactive Popup Confirmation Box -->
+  <div class="modal-overlay hidden" id="bulk-confirm-modal">
+    <div class="modal-card">
+      <span class="material-icons" style="font-size: 48px; color: var(--primary); margin-bottom: 10px;">sync_alt</span>
+      <h4 id="modal-title">Fetch Live Data?</h4>
+      <p id="modal-body">Kya aap is din ka pura bulk data Delhivery API se fetch karna chahte hain? Yeh usi row ke aage column G me save hoga.</p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="btn-modal-no" style="padding: 12px;">No</button>
+        <button class="btn btn-primary" id="btn-modal-yes" style="padding: 12px;">Yes, Fetch</button>
+      </div>
+    </div>
+  </div>
+
   <div class="spinner-overlay hidden" id="loading-spinner"><div class="spinner"></div></div>
   <div class="toast-container" id="toast-container"></div>
 
   <script>
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzvLRaRNwGax1HyjUhhBQax7UBVEKekh0tr8PysAy3zTUOrltoC-nV7cOKKgw6ABrI2xw/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwOrohhY9YPQa2CqahmHfpwgMN9yBc9r9avGHkfOQ5K2Ytc336T_nezKuCEUo0qtiysrA/exec";
 
     const state = { 
       currentMode: null, 
@@ -224,7 +250,8 @@
       scannedData: null, 
       allLogs: [], 
       filteredDate: null,
-      bulkQueue: [] 
+      bulkQueue: [],
+      modalTarget: { date: null, mode: null } // Holds data during popup confirmation
     };
 
     const ui = {
@@ -238,7 +265,10 @@
       resStatus: document.getElementById('res-status'), resMode: document.getElementById('res-mode'), resDate: document.getElementById('res-date'), resTime: document.getElementById('res-time'),
       treeContainer: document.getElementById('tree-container'), dateFilter: document.getElementById('count-date-filter'), btnClearDate: document.getElementById('btn-clear-date'),
       btnRefreshCounts: document.getElementById('btn-refresh-counts'),
-      bulkQueuePanel: document.getElementById('bulk-queue-panel'), queueCountText: document.getElementById('queue-count-text'), btnBulkSave: document.getElementById('btn-bulk-save'), btnAddQueue: document.getElementById('btn-add-queue')
+      bulkQueuePanel: document.getElementById('bulk-queue-panel'), queueCountText: document.getElementById('queue-count-text'), btnBulkSave: document.getElementById('btn-bulk-save'), btnAddQueue: document.getElementById('btn-add-queue'),
+      
+      // Modal Hooks
+      confirmModal: document.getElementById('bulk-confirm-modal'), modalTitle: document.getElementById('modal-title'), modalBody: document.getElementById('modal-body'), btnModalYes: document.getElementById('btn-modal-yes'), btnModalNo: document.getElementById('btn-modal-no')
     };
 
     function playAudioTone(type) {
@@ -343,8 +373,8 @@
           const mNode = createNode(mLabel, tree[year].months[month].p, tree[year].months[month].r);
           const mContent = mNode.querySelector('.tree-content');
           Object.keys(tree[year].months[month].days).sort().reverse().forEach(day => {
-            const dLabel = `Date: ${day}/${month}/${year}`;
-            const dNode = createNode(dLabel, tree[year].months[month].days[day].p, tree[year].months[month].days[day].r, true);
+            const dLabel = `${day}/${month}/${year}`;
+            const dNode = createNode(`Date: ${dLabel}`, tree[year].months[month].days[day].p, tree[year].months[month].days[day].r, true, dLabel);
             mContent.appendChild(dNode);
           });
           yContent.appendChild(mNode);
@@ -354,7 +384,7 @@
       if (ui.treeContainer.innerHTML === '') ui.treeContainer.innerHTML = '<p style="text-align:center; font-size:0.85rem; color:var(--text-muted); padding:10px;">No record logs found.</p>';
     }
 
-    function createNode(label, pCount, rCount, isLeaf = false) {
+    function createNode(label, pCount, rCount, isLeaf = false, actualRawDate = '') {
       const div = document.createElement('div');
       div.className = 'tree-node';
       div.innerHTML = `
@@ -363,23 +393,73 @@
             ${!isLeaf ? '<span class="material-icons" style="font-size:18px; color:var(--text-muted)">chevron_right</span>' : '<span class="material-icons" style="font-size:16px; color:var(--text-muted)">calendar_today</span>'}
             <span>${label}</span>
           </div>
-          <div class="tree-chips"><span class="chip chip-p">P: ${pCount}</span><span class="chip chip-r">R: ${rCount}</span></div>
+          <div class="tree-chips">
+            <span class="chip chip-p" data-date="${actualRawDate}" data-mode="Pickup">P: ${pCount}</span>
+            <span class="chip chip-r" data-date="${actualRawDate}" data-mode="Return">R: ${rCount}</span>
+          </div>
         </div>
         ${!isLeaf ? '<div class="tree-content"></div>' : ''}
       `;
+      
       if (!isLeaf) {
         const header = div.querySelector('.tree-header');
         const content = div.querySelector('.tree-content');
         const icon = div.querySelector('.tree-header-left .material-icons');
         header.addEventListener('click', (e) => {
+          // Prevent chip click triggering collapse toggle
+          if (e.target.classList.contains('chip')) return;
           e.stopPropagation();
           const isOpen = content.style.display === 'flex';
           content.style.display = isOpen ? 'none' : 'flex';
           icon.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
           icon.style.transition = 'transform 0.2s';
         });
+      } else {
+        // Leaf nodes chips setup for popup triggers
+        div.querySelectorAll('.chip').forEach(chip => {
+          chip.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const targetDate = chip.getAttribute('data-date');
+            const targetMode = chip.getAttribute('data-mode');
+            triggerBulkModal(targetDate, targetMode);
+          });
+        });
       }
       return div;
+    }
+
+    // Modal Trigger Configuration
+    function triggerBulkModal(date, mode) {
+      state.modalTarget.date = date;
+      state.modalTarget.mode = mode;
+      ui.modalTitle.textContent = `Sync ${mode} Data?`;
+      ui.modalBody.textContent = `Kya aap ${date} ke saare "${mode}" AWBs ka live data Delhivery se fetch karna chahte hain? Data sheet me usi row ke aage Column G me fill ho jayega.`;
+      ui.confirmModal.classList.remove('hidden');
+    }
+
+    function hideBulkModal() {
+      ui.confirmModal.classList.add('hidden');
+      state.modalTarget.date = null;
+      state.modalTarget.mode = null;
+    }
+
+    // Bulk Network Sync Execution
+    async function confirmAndFetchBulk() {
+      const { date, mode } = state.modalTarget;
+      hideBulkModal();
+      
+      showSpinner(true);
+      const response = await makeApiCall({ action: 'fetchBulkDayData', date: date, mode: mode });
+      showSpinner(false);
+      
+      if (response && response.success) {
+        playAudioTone('success');
+        showToast('Bulk Sync Done!', `Successfully updated ${response.updatedCount} rows directly inline.`, 'success');
+        await loadCounts();
+      } else {
+        playAudioTone('error');
+        showToast('Sync Failed', response.error || 'API tracking failure', 'error');
+      }
     }
 
     function updateQueueUI() {
@@ -391,15 +471,12 @@
       }
     }
 
-    // Direct Instant Save 
     async function executeSaveOperation() {
       if (!state.scannedData) return;
-      
       const response = await makeApiCall({ action: 'saveData', payload: state.scannedData });
       if (response && response.success) {
         playAudioTone('success');
         showToast('Success', 'Logged perfectly into spreadsheet.', 'success');
-        
         state.allLogs = response.logs || [];
         renderTree();
         clearAfterSave();
@@ -413,18 +490,14 @@
       }
     }
 
-    // Execute Bulk Batch Save
     async function executeBulkSave() {
       if (state.bulkQueue.length === 0) return;
-      
       const response = await makeApiCall({ action: 'saveDataBulk', payloads: state.bulkQueue });
       if (response && response.success) {
         playAudioTone('success');
         showToast('Bulk Saved', `Added: ${response.addedCount} items. Skipped duplicates: ${response.skippedCount}`, 'success');
-        
         state.allLogs = response.logs || [];
         renderTree();
-        
         state.bulkQueue = [];
         updateQueueUI();
       } else {
@@ -444,12 +517,10 @@
     async function handleAwbSubmission(awb) {
       if (!awb || awb.trim() === "") return;
       await stopCamera();
-      
       const response = await makeApiCall({ action: 'fetchDelhivery', awb: awb.trim() });
       if (response && response.success) {
         const dateTime = getFormattedDateTime();
         state.scannedData = { awb: response.data.awb, orderId: response.data.orderId, status: response.data.status, mode: state.currentMode, date: dateTime.date, time: dateTime.time };
-        
         ui.resAwb.textContent = state.scannedData.awb;
         ui.resOrderId.textContent = state.scannedData.orderId;
         ui.resStatus.textContent = state.scannedData.status;
@@ -509,7 +580,6 @@
       ui.awbInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleAwbSubmission(ui.awbInput.value); });
       ui.btnSave.addEventListener('click', executeSaveOperation);
       
-      // Cache Locally inside Queue Array
       ui.btnAddQueue.addEventListener('click', () => {
         if (!state.scannedData) return;
         state.bulkQueue.push(state.scannedData);
@@ -524,6 +594,10 @@
         ui.resultPanel.classList.add('hidden'); state.scannedData = null;
         if (state.currentMethod === 'camera') await startCamera(); else { ui.awbInput.value = ''; ui.awbInput.focus(); }
       });
+
+      // Modal Button Listeners
+      ui.btnModalYes.addEventListener('click', confirmAndFetchBulk);
+      ui.btnModalNo.addEventListener('click', hideBulkModal);
 
       ui.dateFilter.addEventListener('input', (e) => { state.filteredDate = e.target.value; renderTree(); });
       ui.btnClearDate.addEventListener('click', () => { ui.dateFilter.value = ''; state.filteredDate = null; renderTree(); });
