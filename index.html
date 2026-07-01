@@ -6,32 +6,32 @@
   <title>Daily QR Scanner</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <script src="https://unpkg.com/html5-qrcode" defer></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     :root {
-      --bg-gradient: #f8fafc;
-      --card-bg: #ffffff;
-      --border-color: #e2e8f0;
+      --bg-gradient: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+      --glass-bg: rgba(255, 255, 255, 0.7);
+      --glass-border: rgba(0, 0, 0, 0.08);
       --text-main: #0f172a;
       --text-muted: #64748b;
       --primary: #4f46e5;
       --success: #10b981;
       --danger: #ef4444;
-      --card-radius: 14px;
-      --btn-radius: 10px;
-      --input-bg: #f1f5f9;
-      --panel-shadow: 0 2px 12px rgba(148, 163, 184, 0.06);
+      --card-radius: 24px;
+      --btn-radius: 16px;
+      --input-bg: rgba(255, 255, 255, 0.9);
+      --panel-shadow: 0 8px 32px 0 rgba(148, 163, 184, 0.25);
     }
 
     [data-theme="dark"] {
-      --bg-gradient: #0f172a;
-      --card-bg: #1e293b;
-      --border-color: #334155;
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+      --glass-bg: rgba(255, 255, 255, 0.03);
+      --glass-border: rgba(255, 255, 255, 0.08);
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --primary: #6366f1;
-      --input-bg: #0f172a;
-      --panel-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+      --input-bg: rgba(0, 0, 0, 0.2);
+      --panel-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
     }
 
     * {
@@ -49,7 +49,9 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 14px;
+      padding: 20px;
+      overflow-x: hidden;
+      transition: background 0.3s ease;
     }
 
     .top-actions {
@@ -58,162 +60,209 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 10px;
+      margin-bottom: 5px;
     }
 
     .circle-btn {
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
       color: var(--text-main);
-      width: 38px;
-      height: 38px;
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       box-shadow: var(--panel-shadow);
+      transition: all 0.3s ease;
     }
+
+    .circle-btn:active { transform: scale(0.9); }
 
     .container {
       width: 100%;
       max-width: 440px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 20px;
     }
 
     header {
       text-align: center;
-      margin-bottom: 2px;
+      margin-bottom: 5px;
     }
 
-    header h1 { font-size: 1.4rem; font-weight: 700; }
-    header p { font-size: 0.8rem; color: var(--text-muted); }
+    header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.5px; }
+    header p { font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; }
 
     .card {
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
       border-radius: var(--card-radius);
-      padding: 16px;
+      padding: 24px;
       box-shadow: var(--panel-shadow);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 12px;
       width: 100%;
-      padding: 12px;
+      padding: 18px;
       border: none;
       border-radius: var(--btn-radius);
-      font-size: 0.9rem;
+      font-size: 1rem;
       font-weight: 600;
       color: #fff;
       cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
-    .btn:active { transform: scale(0.99); }
+    .btn:active { transform: scale(0.98); }
     .btn-primary { background: var(--primary); }
-    .btn-success { background: var(--success); }
 
     .btn-mode-p { background: transparent; color: var(--success); border: 2px solid var(--success); }
     .btn-mode-p.active { background: var(--success) !important; color: #fff !important; }
+
     .btn-mode-r { background: transparent; color: var(--danger); border: 2px solid var(--danger); }
     .btn-mode-r.active { background: var(--danger) !important; color: #fff !important; }
-    .btn-secondary { background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-color); }
+
+    .btn-secondary { background: rgba(0, 0, 0, 0.05); color: var(--text-main); border: 1px solid var(--glass-border); }
+    [data-theme="dark"] .btn-secondary { background: rgba(255, 255, 255, 0.08); color: #fff; }
 
     .hidden { display: none !important; }
 
     .slide-panel {
       max-height: 0;
       overflow: hidden;
+      transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 14px;
     }
 
-    .slide-panel.open { max-height: 140px; margin-top: 10px; }
-    .mode-indicators { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .sub-panel { display: flex; flex-direction: column; gap: 10px; }
+    .slide-panel.open { max-height: 250px; margin-top: 14px; }
+
+    .mode-indicators {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    /* Auto Save Toggle Design */
+    .autosave-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: rgba(79, 70, 229, 0.06);
+      border: 1px dashed var(--primary);
+      border-radius: var(--btn-radius);
+      margin-top: 5px;
+    }
+    .autosave-label { font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+
+    /* Elegant Toggle Switch */
+    .switch { position: relative; display: inline-block; width: 46px; height: 26px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .3s; border-radius: 34px; }
+    .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+    input:checked + .slider { background-color: var(--success); }
+    input:checked + .slider:before { transform: translateX(20px); }
+
+    .sub-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .input-wrapper { position: relative; width: 100%; }
 
     .text-input {
       width: 100%;
-      padding: 12px;
+      padding: 16px;
       background: var(--input-bg);
-      border: 1px solid var(--border-color);
+      border: 1px solid var(--glass-border);
       border-radius: var(--btn-radius);
       color: var(--text-main);
-      font-size: 0.9rem;
+      font-size: 1rem;
       outline: none;
     }
 
-    #scanner-container {
-      width: 100%;
-      border-radius: var(--btn-radius);
-      overflow: hidden;
-      border: 2px dashed var(--text-muted);
-      background: #000;
-    }
+    #scanner-container { width: 100%; border-radius: var(--btn-radius); overflow: hidden; border: 2px dashed var(--text-muted); background: #000; }
     #qr-reader { width: 100% !important; border: none !important; }
     #qr-reader__dashboard, #qr-reader__header { display: none !important; }
 
-    .result-table { width: 100%; border-collapse: collapse; }
-    .result-table td { padding: 8px 0; border-bottom: 1px solid var(--border-color); font-size: 0.85rem; }
-    .result-table td:first-child { color: var(--text-muted); width: 35%; }
+    .result-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    .result-table td { padding: 10px 0; border-bottom: 1px solid var(--glass-border); font-size: 0.9rem; }
+    .result-table td:first-child { color: var(--text-muted); width: 40%; }
     .result-table td:last-child { color: var(--text-main); font-weight: 600; text-align: right; }
 
-    .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; }
-    .badge-pickup { background: rgba(16, 185, 129, 0.12); color: #10b981; }
-    .badge-return { background: rgba(239, 68, 68, 0.12); color: #ef4444; }
+    .badge { display: inline-block; padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; }
+    .badge-pickup { background: rgba(16, 185, 129, 0.2); color: #059669; }
+    [data-theme="dark"] .badge-pickup { color: #34d399; }
+    .badge-return { background: rgba(239, 68, 68, 0.2); color: #dc2626; }
+    [data-theme="dark"] .badge-return { color: #f87171; }
 
-    .count-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .filter-bar { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
-    .date-picker { flex: 1; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--input-bg); color: var(--text-main); font-size: 0.85rem; }
-    
-    .clear-filter-btn {
-      background: var(--danger); color: white; border: none; width: 34px; height: 34px; border-radius: 6px;
-      display: flex; align-items: center; justify-content: center; cursor: pointer;
-    }
+    .count-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .count-header h3 { font-size: 1.1rem; font-weight: 600; }
 
-    .tree-node { margin-bottom: 4px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); }
-    .tree-header { background: var(--input-bg); padding: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
-    .tree-chips { display: flex; gap: 4px; }
-    .chip { font-size: 0.65rem; padding: 2px 4px; border-radius: 4px; font-weight: 600; }
-    .chip-p { background: rgba(16, 185, 129, 0.12); color: #10b981; }
-    .chip-r { background: rgba(239, 68, 68, 0.12); color: #ef4444; }
-    .tree-content { padding: 6px 10px; background: var(--card-bg); display: none; flex-direction: column; gap: 4px; }
+    .filter-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+    .date-picker { flex: 1; padding: 12px; border: 1px solid var(--glass-border); border-radius: 12px; background: var(--input-bg); color: var(--text-main); font-size: 0.9rem; outline: none; }
 
-    .bulk-operational-tab { background: rgba(79, 70, 229, 0.04); border: 1px dashed var(--primary); border-radius: 10px; padding: 10px; margin-bottom: 10px; }
-    .bulk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
-    .btn-bulk { padding: 8px; font-size: 0.8rem; border-radius: 6px; }
+    .clear-filter-btn { background: var(--danger); color: white; border: none; width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 
-    .app-modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(15, 23, 42, 0.4); display: flex; justify-content: center; align-items: center; z-index: 10000; }
-    .app-modal { background: var(--card-bg); border: 1px solid var(--border-color); width: calc(100% - 40px); max-width: 320px; border-radius: 12px; padding: 14px; text-align: center; }
-    .modal-actions { display: flex; gap: 6px; margin-top: 12px; }
+    .tree-node { margin-bottom: 8px; border-radius: 12px; overflow: hidden; border: 1px solid var(--glass-border); }
+    .tree-header { background: rgba(0, 0, 0, 0.02); padding: 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; font-weight: 600; font-size: 0.95rem; }
+    [data-theme="dark"] .tree-header { background: rgba(255, 255, 255, 0.02); }
 
-    .toast-container { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 6px; width: calc(100% - 32px); max-width: 380px; }
-    .toast { background: var(--card-bg); border-left: 4px solid var(--primary); padding: 10px; border-radius: 6px; box-shadow: var(--panel-shadow); display: flex; align-items: center; gap: 8px; color: var(--text-main); font-size: 0.85rem; }
+    .tree-header-left { display: flex; align-items: center; gap: 8px; }
+    .tree-chips { display: flex; gap: 6px; }
+    .chip { font-size: 0.75rem; padding: 2px 8px; border-radius: 6px; font-weight: 600; }
+    .chip-p { background: rgba(16, 185, 129, 0.15); color: #059669; }
+    [data-theme="dark"] .chip-p { color: #34d399; }
+    .chip-r { background: rgba(239, 68, 68, 0.15); color: #dc2626; }
+    [data-theme="dark"] .chip-r { color: #f87171; }
+
+    .tree-content { padding: 10px 14px; background: rgba(255, 255, 255, 0.3); display: none; flex-direction: column; gap: 6px; }
+    [data-theme="dark"] .tree-content { background: rgba(0, 0, 0, 0.1); }
+
+    .toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; width: calc(100% - 40px); max-width: 400px; }
+    .toast { background: var(--glass-bg); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-left: 4px solid var(--primary); padding: 16px; border-radius: 12px; box-shadow: var(--panel-shadow); display: flex; align-items: center; gap: 12px; color: var(--text-main); }
     .toast.success { border-left-color: var(--success); }
     .toast.error { border-left-color: var(--danger); }
+    .toast.warning { border-left-color: #f59e0b; }
 
-    .spinner-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.2); z-index: 9998; display: flex; justify-content: center; align-items: center; }
-    .spinner { width: 34px; height: 34px; border: 3px solid rgba(0, 0, 0, 0.1); border-left-color: var(--primary); border-radius: 50%; animation: spin 0.7s linear infinite; }
+    .spinner-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); z-index: 9998; display: flex; justify-content: center; align-items: center; }
+    .spinner { width: 48px; height: 48px; border: 4px solid rgba(0, 0, 0, 0.1); border-left-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+    [data-theme="dark"] .spinner { border: 4px solid rgba(255, 255, 255, 0.1); border-left-color: var(--primary); }
+
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
 
   <div class="top-actions">
-    <button class="circle-btn" id="btn-all-close"><span class="material-icons">close</span></button>
+    <button class="circle-btn" id="btn-all-close" title="Close All"><span class="material-icons">close</span></button>
     <button class="circle-btn" id="btn-theme-toggle"><span class="material-icons" id="theme-icon">dark_mode</span></button>
   </div>
 
   <div class="container">
     <header>
       <h1>Daily QR Scanner</h1>
-      <p>Warehouse Operational System</p>
+      <p>Professional Warehouse Management</p>
     </header>
 
     <div class="card" id="home-panel">
@@ -223,8 +272,16 @@
 
       <div class="slide-panel" id="mode-panel">
         <div class="mode-indicators">
-          <button class="btn btn-mode-p" id="btn-mode-pickup"><span class="material-icons">local_shipping</span>Pickup</button>
-          <button class="btn btn-mode-r" id="btn-mode-return"><span class="material-icons">assignment_return</span>Return</button>
+          <button class="btn btn-mode-p" id="btn-mode-pickup"><span class="material-icons">local_shipping</span> Pickup</button>
+          <button class="btn btn-mode-r" id="btn-mode-return"><span class="material-icons">assignment_return</span> Return</button>
+        </div>
+        
+        <div class="autosave-container">
+          <div class="autosave-label"><span class="material-icons" style="color:var(--primary)">flash_on</span> Auto-Save Mode</div>
+          <label class="switch">
+            <input type="checkbox" id="chk-autosave">
+            <span class="slider"></span>
+          </label>
         </div>
       </div>
     </div>
@@ -232,8 +289,8 @@
     <div class="card hidden" id="action-selection-panel">
       <div class="sub-panel">
         <div class="mode-indicators">
-          <button class="btn btn-secondary" id="btn-action-camera"><span class="material-icons">photo_camera</span>Camera</button>
-          <button class="btn btn-secondary" id="btn-action-manual"><span class="material-icons">keyboard</span>Manual</button>
+          <button class="btn btn-secondary" id="btn-action-camera"><span class="material-icons">photo_camera</span> Camera</button>
+          <button class="btn btn-secondary" id="btn-action-manual"><span class="material-icons">keyboard</span> Manual</button>
         </div>
       </div>
     </div>
@@ -242,13 +299,18 @@
       <div class="sub-panel">
         <div id="scanner-container" class="hidden"><div id="qr-reader"></div></div>
         <div id="manual-container" class="hidden">
-          <input type="text" id="awb-input" class="text-input" placeholder="Enter or Scan AWB Number">
+          <div class="input-wrapper">
+            <input type="text" id="awb-input" class="text-input" placeholder="Enter or Scan AWB Number">
+          </div>
         </div>
       </div>
     </div>
 
     <div class="card hidden" id="result-panel">
       <div class="sub-panel">
+        <h3 style="font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+          <span class="material-icons" style="color: var(--primary)">description</span> Shipment Details
+        </h3>
         <table class="result-table">
           <tr><td>AWB</td><td id="res-awb">-</td></tr>
           <tr><td>Order ID</td><td id="res-order-id">-</td></tr>
@@ -257,7 +319,7 @@
           <tr><td>Date</td><td id="res-date">-</td></tr>
           <tr><td>Time</td><td id="res-time">-</td></tr>
         </table>
-        <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px;">
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
           <button class="btn btn-success" id="btn-save"><span class="material-icons">save</span>Save Entry</button>
           <button class="btn btn-secondary" id="btn-close"><span class="material-icons">close</span>Close</button>
         </div>
@@ -266,35 +328,16 @@
 
     <div class="card" id="count-panel">
       <div class="count-header">
-        <h3 style="font-size:1rem;">Daily Counts</h3>
-        <button class="circle-btn" id="btn-refresh-counts" style="width:30px; height:30px;"><span class="material-icons" style="font-size:14px;">refresh</span></button>
+        <h3><span class="material-icons" style="vertical-align: bottom; margin-right: 6px; color: var(--primary)">bar_chart</span>Daily Counts</h3>
+        <button class="circle-btn" id="btn-refresh-counts" style="width:34px; height:34px;"><span class="material-icons" style="font-size:18px;">refresh</span></button>
       </div>
       
       <div class="filter-bar">
         <input type="date" id="count-date-filter" class="date-picker">
-        <button class="clear-filter-btn" id="btn-clear-date"><span class="material-icons">clear</span></button>
-      </div>
-
-      <div id="bulk-operational-panel" class="bulk-operational-tab hidden">
-        <div style="font-size:0.75rem; font-weight:600; color:var(--primary);">Bulk Processing Target: <span id="lbl-bulk-date"></span></div>
-        <div class="bulk-grid">
-          <button class="btn btn-success btn-bulk" id="btn-bulk-pickup">Pickup Bulk</button>
-          <button class="btn btn-mode-r active btn-bulk" id="btn-bulk-return">Return Bulk</button>
-        </div>
+        <button class="clear-filter-btn" id="btn-clear-date" title="Reset Default"><span class="material-icons">clear</span></button>
       </div>
 
       <div id="tree-container"></div>
-    </div>
-  </div>
-
-  <div id="custom-confirm-modal" class="app-modal-overlay hidden">
-    <div class="app-modal">
-      <h4>Confirm Sync Block</h4>
-      <p style="font-size: 0.8rem; color: var(--text-muted); margin-top:4px;">Are you sure you want to initialize the dynamic processing script?</p>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" style="padding:8px;" id="btn-modal-no">Cancel</button>
-        <button class="btn btn-primary" style="padding:8px;" id="btn-modal-yes">Confirm</button>
-      </div>
     </div>
   </div>
 
@@ -302,10 +345,10 @@
   <div class="toast-container" id="toast-container"></div>
 
   <script>
-    // CRITICAL: Yahan apna Step 1 se mila hua bilkul Naya Deployment Web App URL paste karein!
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwS7HmWoqdBsFe_bC5a8VgMwiggBqhT3unhyj6jkTZmchsIUN892wFj3s-e-7tKdtMJsA/exec";
+    // CRITICAL: Yahan apna deployed Apps Script Web App URL daalein!
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyhoOZVUG_sDVR57FDlnwsanaFq3yH4BPZ_QOpLI3tozrcllcbf0m15TcEBw7-13FGL7Q/exec";
 
-    const state = { currentMode: null, currentMethod: null, html5QrcodeScanner: null, scannedData: null, allLogs: [], filteredDate: null, pendingBulkMode: null };
+    const state = { currentMode: null, currentMethod: null, html5QrcodeScanner: null, scannedData: null, allLogs: [], filteredDate: null, autoSaveTimeout: null };
 
     const ui = {
       btnAllClose: document.getElementById('btn-all-close'), btnThemeToggle: document.getElementById('btn-theme-toggle'), themeIcon: document.getElementById('theme-icon'),
@@ -317,17 +360,37 @@
       toastContainer: document.getElementById('toast-container'), resAwb: document.getElementById('res-awb'), resOrderId: document.getElementById('res-order-id'),
       resStatus: document.getElementById('res-status'), resMode: document.getElementById('res-mode'), resDate: document.getElementById('res-date'), resTime: document.getElementById('res-time'),
       treeContainer: document.getElementById('tree-container'), dateFilter: document.getElementById('count-date-filter'), btnClearDate: document.getElementById('btn-clear-date'),
-      btnRefreshCounts: document.getElementById('btn-refresh-counts'), bulkPanel: document.getElementById('bulk-operational-panel'), lblBulkDate: document.getElementById('lbl-bulk-date'),
-      btnBulkPickup: document.getElementById('btn-bulk-pickup'), btnBulkReturn: document.getElementById('btn-bulk-return'), confirmModal: document.getElementById('custom-confirm-modal'),
-      btnModalYes: document.getElementById('btn-modal-yes'), btnModalNo: document.getElementById('btn-modal-no')
+      btnRefreshCounts: document.getElementById('btn-refresh-counts'), chkAutosave: document.getElementById('chk-autosave')
     };
+
+    // Synthesized Audio Feedback System without external assets
+    function playAudioTone(type) {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        if (type === 'success') {
+          osc.frequency.setValueAtTime(880, ctx.currentTime); // High pitch chime
+          gain.gain.setValueAtTime(0.1, ctx.currentTime);
+          osc.start(); osc.stop(ctx.currentTime + 0.15);
+        } else {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(150, ctx.currentTime); // Low warning buzz
+          gain.gain.setValueAtTime(0.15, ctx.currentTime);
+          osc.start(); osc.stop(ctx.currentTime + 0.35);
+        }
+      } catch(e) { console.log("Audio feedback blocked context error", e); }
+    }
 
     function showToast(title, message, type = 'success') {
       const toast = document.createElement('div');
       toast.className = `toast ${type}`;
-      toast.innerHTML = `<div><strong>${title}</strong>: ${message}</div>`;
+      let icon = type === 'error' ? 'error' : (type === 'warning' ? 'warning' : 'check_circle');
+      toast.innerHTML = `<span class="material-icons">${icon}</span><div class="toast-content"><h4>${title}</h4><p>${message}</p></div>`;
       ui.toastContainer.appendChild(toast);
-      setTimeout(() => { toast.remove(); }, 3000);
+      setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 4000);
     }
 
     function showSpinner(show) {
@@ -339,16 +402,15 @@
       showSpinner(true);
       try {
         const response = await fetch(APPS_SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain' }, // Using text/plain to avoid preflight CORS blockage
-          body: JSON.stringify(data)
+          method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(data)
         });
         const json = await response.json();
         showSpinner(false);
         return json;
       } catch (error) {
         showSpinner(false);
-        showToast('Bridge Error', 'Network layer validation failed. Check Web App Deployment & URL.', 'error');
+        playAudioTone('error');
+        showToast('Network Error', 'Backend server failure link connection down', 'error');
         return { success: false, error: error.toString() };
       }
     }
@@ -356,13 +418,17 @@
     function getFormattedDateTime() {
       const now = new Date();
       const date = now.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-      const time = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+      const time = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
       return { date, time };
     }
 
     function parseSheetDate(str) {
       const parts = str.split('/');
       if(parts.length === 3) return { day: parts[0], month: parts[1], year: parts[2] };
+      const d = new Date(str);
+      if(!isNaN(d.getTime())) {
+        return { day: String(d.getDate()).padStart(2, '0'), month: String(d.getMonth() + 1).padStart(2, '0'), year: String(d.getFullYear()) };
+      }
       return null;
     }
 
@@ -377,37 +443,40 @@
     function renderTree() {
       ui.treeContainer.innerHTML = '';
       const tree = {};
-      
       state.allLogs.forEach(log => {
         const parsed = parseSheetDate(log.date);
         if(!parsed) return;
         const { day, month, year } = parsed;
         if (state.filteredDate) {
-          const fd = state.filteredDate.split('-'); 
+          const fd = state.filteredDate.split('-');
           if (year !== fd[0] || month !== fd[1] || day !== fd[2]) return;
         }
         if (!tree[year]) tree[year] = { p: 0, r: 0, months: {} };
         if (!tree[year].months[month]) tree[year].months[month] = { p: 0, r: 0, days: {} };
         if (!tree[year].months[month].days[day]) tree[year].months[month].days[day] = { p: 0, r: 0 };
-        
         if (log.mode === 'Pickup') { tree[year].p++; tree[year].months[month].p++; tree[year].months[month].days[day].p++; } 
         else { tree[year].r++; tree[year].months[month].r++; tree[year].months[month].days[day].r++; }
       });
 
+      const monthsNames = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
       Object.keys(tree).sort().reverse().forEach(year => {
         const yNode = createNode(`Year: ${year}`, tree[year].p, tree[year].r);
         const yContent = yNode.querySelector('.tree-content');
         Object.keys(tree[year].months).sort().reverse().forEach(month => {
-          const mNode = createNode(`Month ${month}`, tree[year].months[month].p, tree[year].months[month].r);
+          const mIndex = parseInt(month, 10);
+          const mLabel = monthsNames[mIndex] || `Month ${month}`;
+          const mNode = createNode(mLabel, tree[year].months[month].p, tree[year].months[month].r);
           const mContent = mNode.querySelector('.tree-content');
           Object.keys(tree[year].months[month].days).sort().reverse().forEach(day => {
-            const dNode = createNode(`Date: ${day}/${month}/${year}`, tree[year].months[month].days[day].p, tree[year].months[month].days[day].r, true);
+            const dLabel = `Date: ${day}/${month}/${year}`;
+            const dNode = createNode(dLabel, tree[year].months[month].days[day].p, tree[year].months[month].days[day].r, true);
             mContent.appendChild(dNode);
           });
           yContent.appendChild(mNode);
         });
         ui.treeContainer.appendChild(yNode);
       });
+      if (ui.treeContainer.innerHTML === '') ui.treeContainer.innerHTML = '<p style="text-align:center; font-size:0.85rem; color:var(--text-muted); padding:10px;">No record logs found.</p>';
     }
 
     function createNode(label, pCount, rCount, isLeaf = false) {
@@ -415,23 +484,58 @@
       div.className = 'tree-node';
       div.innerHTML = `
         <div class="tree-header">
-          <span>${label}</span>
+          <div class="tree-header-left">
+            ${!isLeaf ? '<span class="material-icons" style="font-size:18px; color:var(--text-muted)">chevron_right</span>' : '<span class="material-icons" style="font-size:16px; color:var(--text-muted)">calendar_today</span>'}
+            <span>${label}</span>
+          </div>
           <div class="tree-chips"><span class="chip chip-p">P: ${pCount}</span><span class="chip chip-r">R: ${rCount}</span></div>
         </div>
         ${!isLeaf ? '<div class="tree-content"></div>' : ''}
       `;
       if (!isLeaf) {
-        div.querySelector('.tree-header').addEventListener('click', () => {
-          const c = div.querySelector('.tree-content');
-          c.style.display = c.style.display === 'flex' ? 'none' : 'flex';
+        const header = div.querySelector('.tree-header');
+        const content = div.querySelector('.tree-content');
+        const icon = div.querySelector('.tree-header-left .material-icons');
+        header.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const isOpen = content.style.display === 'flex';
+          content.style.display = isOpen ? 'none' : 'flex';
+          icon.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
+          icon.style.transition = 'transform 0.2s';
         });
       }
       return div;
     }
 
+    async function executeSaveOperation() {
+      if (!state.scannedData) return;
+      if (state.autoSaveTimeout) clearTimeout(state.autoSaveTimeout);
+      
+      const response = await makeApiCall({ action: 'saveData', payload: state.scannedData });
+      if (response && response.success) {
+        playAudioTone('success');
+        showToast('Success', 'Record appended to log sheet perfectly.', 'success');
+        ui.awbInput.value = '';
+        ui.resultPanel.classList.add('hidden');
+        state.scannedData = null;
+        await loadCounts();
+        if (state.currentMethod === 'camera') await startCamera();
+        else ui.awbInput.focus();
+      } else if (response && response.duplicate) {
+        playAudioTone('error');
+        showToast('Duplicate Found', `Already Saved\nDate: ${response.date}\nTime: ${response.time}`, 'warning');
+        if (state.currentMethod === 'camera') setTimeout(async () => { await startCamera(); }, 2000);
+      } else {
+        playAudioTone('error');
+        showToast('Save Failed', (response && response.error) || 'Unknown logging operation failure', 'error');
+      }
+    }
+
     async function handleAwbSubmission(awb) {
       if (!awb || awb.trim() === "") return;
+      if (state.autoSaveTimeout) clearTimeout(state.autoSaveTimeout);
       await stopCamera();
+      
       const response = await makeApiCall({ action: 'fetchDelhivery', awb: awb.trim() });
       if (response && response.success) {
         const dateTime = getFormattedDateTime();
@@ -443,67 +547,73 @@
         ui.resDate.textContent = state.scannedData.date;
         ui.resTime.textContent = state.scannedData.time;
         ui.resultPanel.classList.remove('hidden');
+        ui.resultPanel.scrollIntoView({ behavior: 'smooth' });
+
+        // Auto Save Execution Logic if switched on
+        if (ui.chkAutosave.checked) {
+          showToast('Auto Saving', 'Saving entry automatically in 1.5s...', 'success');
+          state.autoSaveTimeout = setTimeout(() => { executeSaveOperation(); }, 1500);
+        }
       } else {
-        showToast('Fetch Failed', response.error || 'API validation rejected.', 'error');
+        playAudioTone('error');
+        showToast('Fetch Failed', (response && response.error) || 'Invalid AWB or system error', 'error');
+        if (state.currentMethod === 'camera') startCamera();
       }
     }
 
     async function startCamera() {
       ui.scannerContainer.classList.remove('hidden');
       ui.inputPanel.classList.remove('hidden');
-      if(typeof Html5Qrcode === 'undefined') { showToast('Engine Pending', 'Library scanning mapping state...', 'error'); return;}
       state.html5QrcodeScanner = new Html5Qrcode("qr-reader");
       try {
-        await state.html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 20, qrbox: 250 }, (text) => { handleAwbSubmission(text); });
-      } catch (err) { showToast('Hardware Block', 'Camera device initiation error.', 'error'); }
+        await state.html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 15, qrbox: { width: 250, height: 250 } }, (decodedText) => { ui.awbInput.value = decodedText; handleAwbSubmission(decodedText); }, () => {});
+      } catch (err) { showToast('Camera Error', 'Could not access back camera hardware context initialization failed', 'error'); }
     }
 
     async function stopCamera() {
       if (state.html5QrcodeScanner && state.html5QrcodeScanner.isScanning) {
-        try { await state.html5QrcodeScanner.stop(); } catch(e){}
+        try { await state.html5QrcodeScanner.stop(); } catch (e) { console.error(e); }
       }
       ui.scannerContainer.classList.add('hidden');
     }
 
+    function resetModeButtons() { ui.btnModePickup.classList.remove('active'); ui.btnModeReturn.classList.remove('active'); }
+
+    async function closeAllPanels() {
+      if (state.autoSaveTimeout) clearTimeout(state.autoSaveTimeout);
+      await stopCamera();
+      ui.resultPanel.classList.add('hidden'); ui.inputPanel.classList.add('hidden'); ui.manualContainer.classList.add('hidden'); ui.actionSelectionPanel.classList.add('hidden'); ui.modePanel.classList.remove('open');
+      ui.awbInput.value = ''; state.currentMode = null; state.currentMethod = null; state.scannedData = null; resetModeButtons();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
     function initInterface() {
-      ui.btnThemeToggle.addEventListener('click', () => { document.documentElement.toggleAttribute('data-theme'); });
-      ui.btnAllClose.addEventListener('click', () => { stopCamera(); ui.inputPanel.classList.add('hidden'); ui.resultPanel.classList.add('hidden'); ui.actionSelectionPanel.classList.add('hidden'); ui.modePanel.classList.remove('open'); });
+      ui.btnThemeToggle.addEventListener('click', () => {
+        const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? '' : 'dark';
+        if(theme) document.documentElement.setAttribute('data-theme', 'dark'); else document.documentElement.removeAttribute('data-theme');
+        ui.themeIcon.textContent = theme ? 'light_mode' : 'dark_mode';
+      });
+
+      ui.btnAllClose.addEventListener('click', closeAllPanels);
       ui.btnDailyScan.addEventListener('click', () => { ui.modePanel.classList.toggle('open'); });
-      ui.btnModePickup.addEventListener('click', () => { state.currentMode = 'Pickup'; ui.actionSelectionPanel.classList.remove('hidden'); });
-      ui.btnModeReturn.addEventListener('click', () => { state.currentMode = 'Return'; ui.actionSelectionPanel.classList.remove('hidden'); });
-      ui.btnActionCamera.addEventListener('click', () => { state.currentMethod = 'camera'; ui.manualContainer.classList.add('hidden'); startCamera(); });
-      ui.btnActionManual.addEventListener('click', () => { state.currentMethod = 'manual'; stopCamera(); ui.inputPanel.classList.remove('hidden'); ui.manualContainer.classList.remove('hidden'); ui.awbInput.focus(); });
-      
+
+      ui.btnModePickup.addEventListener('click', () => { state.currentMode = 'Pickup'; resetModeButtons(); ui.btnModePickup.classList.add('active'); ui.actionSelectionPanel.classList.remove('hidden'); ui.actionSelectionPanel.scrollIntoView({ behavior: 'smooth' }); });
+      ui.btnModeReturn.addEventListener('click', () => { state.currentMode = 'Return'; resetModeButtons(); ui.btnModeReturn.classList.add('active'); ui.actionSelectionPanel.classList.remove('hidden'); ui.actionSelectionPanel.scrollIntoView({ behavior: 'smooth' }); });
+
+      ui.btnActionCamera.addEventListener('click', async () => { state.currentMethod = 'camera'; ui.manualContainer.classList.add('hidden'); await startCamera(); });
+      ui.btnActionManual.addEventListener('click', async () => { state.currentMethod = 'manual'; await stopCamera(); ui.inputPanel.classList.remove('hidden'); ui.manualContainer.classList.remove('hidden'); ui.awbInput.value = ''; ui.awbInput.focus(); });
+
       ui.awbInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleAwbSubmission(ui.awbInput.value); });
-      
-      ui.btnSave.addEventListener('click', async () => {
-        if (!state.scannedData) return;
-        const res = await makeApiCall({ action: 'saveData', payload: state.scannedData });
-        if (res && res.success) {
-          showToast('Success', 'Record synchronization active.');
-          ui.resultPanel.classList.add('hidden');
-          loadCounts();
-        } else { showToast('Error', 'Storage operation rejected.', 'error'); }
+      ui.btnSave.addEventListener('click', executeSaveOperation);
+
+      ui.btnClose.addEventListener('click', async () => {
+        if (state.autoSaveTimeout) clearTimeout(state.autoSaveTimeout);
+        ui.resultPanel.classList.add('hidden'); state.scannedData = null;
+        if (state.currentMethod === 'camera') await startCamera(); else { ui.awbInput.value = ''; ui.awbInput.focus(); }
       });
 
-      ui.dateFilter.addEventListener('input', (e) => {
-        state.filteredDate = e.target.value;
-        if(state.filteredDate) { ui.lblBulkDate.innerText = state.filteredDate; ui.bulkPanel.classList.remove('hidden'); }
-        renderTree();
-      });
-
-      ui.btnClearDate.addEventListener('click', () => { ui.dateFilter.value = ''; state.filteredDate = null; ui.bulkPanel.classList.add('hidden'); renderTree(); });
-      
-      ui.btnBulkPickup.addEventListener('click', () => { state.pendingBulkMode = 'pickup'; ui.customConfirmModal.classList.remove('hidden'); });
-      ui.btnBulkReturn.addEventListener('click', () => { state.pendingBulkMode = 'return'; ui.customConfirmModal.classList.remove('hidden'); });
-      
-      ui.btnModalYes.addEventListener('click', async () => {
-        ui.customConfirmModal.classList.add('hidden');
-        const res = await makeApiCall({ action: 'processBulkFetch', date: state.filteredDate, mode: state.pendingBulkMode });
-        if(res && res.success) { showToast('Complete', res.message); loadCounts(); }
-        else showToast('Failed', res.error, 'error');
-      });
-      ui.btnModalNo.addEventListener('click', () => ui.customConfirmModal.classList.add('hidden'));
+      ui.dateFilter.addEventListener('input', (e) => { state.filteredDate = e.target.value; renderTree(); });
+      ui.btnClearDate.addEventListener('click', () => { ui.dateFilter.value = ''; state.filteredDate = null; renderTree(); });
       ui.btnRefreshCounts.addEventListener('click', loadCounts);
 
       loadCounts();
