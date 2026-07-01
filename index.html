@@ -141,7 +141,6 @@
 
     .btn-primary { background: var(--primary); }
 
-    /* Pickup & Return Mode Outline vs Solid Logic */
     .btn-mode-p {
       background: transparent;
       color: var(--success);
@@ -270,7 +269,6 @@
     .badge-return { background: rgba(239, 68, 68, 0.2); color: #dc2626; }
     [data-theme="dark"] .badge-return { color: #f87171; }
 
-    /* Count Section Styles */
     .count-header {
       display: flex;
       justify-content: space-between;
@@ -365,6 +363,52 @@
     }
     [data-theme="dark"] .tree-content { background: rgba(0, 0, 0, 0.1); }
 
+    /* NEW STYLING: Dynamic Bulk Controls Panel CSS Layout */
+    .bulk-operational-tab {
+      background: rgba(79, 70, 229, 0.06);
+      border: 1px dashed var(--primary);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+      animation: fadeIn 0.3s ease;
+    }
+    .bulk-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .btn-bulk {
+      padding: 12px;
+      font-size: 0.9rem;
+      border-radius: 12px;
+    }
+
+    /* Embedded WebApp Floating Modal Window */
+    .app-modal-overlay {
+      position: fixed;
+      top:0; left:0; right:0; bottom:0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+    }
+    .app-modal {
+      background: var(--bg-gradient);
+      border: 1px solid var(--glass-border);
+      width: calc(100% - 40px);
+      max-width: 360px;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: var(--panel-shadow);
+      text-align: center;
+    }
+    .app-modal h4 { margin-bottom: 8px; font-size: 1.15rem; font-weight: 700; }
+    .app-modal p { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; line-height: 1.4; }
+    .modal-actions { display: flex; gap: 10px; }
+
     .toast-container {
       position: fixed;
       bottom: 30px;
@@ -390,6 +434,7 @@
       align-items: center;
       gap: 12px;
       color: var(--text-main);
+      transition: opacity 0.3s ease;
     }
 
     .toast.success { border-left-color: var(--success); }
@@ -514,11 +559,31 @@
       
       <div class="filter-bar">
         <input type="date" id="count-date-filter" class="date-picker">
-        <button class="clear-filter-btn" id="btn-clear-date" title="Reset Default"><span class="material-icons">clear</span></button>
+        <button class="clear-filter-btn" id="btn-clear-date" title="Clear Inputs to Default"><span class="material-icons">clear</span></button>
       </div>
 
-      <div id="tree-container">
+      <div id="bulk-operational-panel" class="bulk-operational-tab hidden">
+        <div style="font-size:0.85rem; font-weight:600; color:var(--primary); display:flex; align-items:center; gap:4px;">
+          <span class="material-icons" style="font-size:16px">sync_alt</span> Bulk Operations for <span id="lbl-bulk-date"></span>
         </div>
+        <div class="bulk-grid">
+          <button class="btn btn-success btn-bulk" id="btn-bulk-pickup"><span class="material-icons" style="font-size:16px;">download</span>Pickup Bulk</button>
+          <button class="btn btn-mode-r active btn-bulk" id="btn-bulk-return"><span class="material-icons" style="font-size:16px;">replay</span>Return Bulk</button>
+        </div>
+      </div>
+
+      <div id="tree-container"></div>
+    </div>
+  </div>
+
+  <div id="custom-confirm-modal" class="app-modal-overlay hidden">
+    <div class="app-modal">
+      <h4 id="confirm-modal-title">Confirm Action</h4>
+      <p id="confirm-modal-body">Are you sure you want to proceed with executing bulk API fetching matching logs?</p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" style="padding:12px;" id="btn-modal-no">No</button>
+        <button class="btn btn-primary" style="padding:12px;" id="btn-modal-yes">Yes</button>
+      </div>
     </div>
   </div>
 
@@ -526,7 +591,8 @@
   <div class="toast-container" id="toast-container"></div>
 
   <script>
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzzVt69PMmPguIJLqxAdnW9UmtLDoCH5rbE1upiS5ddbl49iEWZZj9jMqSk-3BM2V2Nbg/exec";
+    // Configured backend deploy endpoints tracking metrics
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxHmTKmNuNHtgN_qztfcF1KNoKnDqxgO_N7TojDL030s17S3jhORf0H5wtmqPs9HHju9w/exec";
 
     const state = {
       currentMode: null, 
@@ -534,7 +600,8 @@
       html5QrcodeScanner: null,
       scannedData: null,
       allLogs: [],
-      filteredDate: null
+      filteredDate: null,
+      pendingBulkMode: null 
     };
 
     const ui = {
@@ -566,7 +633,17 @@
       treeContainer: document.getElementById('tree-container'),
       dateFilter: document.getElementById('count-date-filter'),
       btnClearDate: document.getElementById('btn-clear-date'),
-      btnRefreshCounts: document.getElementById('btn-refresh-counts')
+      btnRefreshCounts: document.getElementById('btn-refresh-counts'),
+      // Bulk Elements
+      bulkPanel: document.getElementById('bulk-operational-panel'),
+      lblBulkDate: document.getElementById('lbl-bulk-date'),
+      btnBulkPickup: document.getElementById('btn-bulk-pickup'),
+      btnBulkReturn: document.getElementById('btn-bulk-return'),
+      confirmModal: document.getElementById('custom-confirm-modal'),
+      btnModalYes: document.getElementById('btn-modal-yes'),
+      btnModalNo: document.getElementById('btn-modal-no'),
+      confirmTitle: document.getElementById('confirm-modal-title'),
+      confirmBody: document.getElementById('confirm-modal-body')
     };
 
     function showToast(title, message, type = 'success') {
@@ -600,7 +677,7 @@
         return json;
       } catch (error) {
         showSpinner(false);
-        showToast('Network Error', 'Backend server failure link connection down', 'error');
+        showToast('Network Error', 'Backend server connection error structural crash', 'error');
         return { success: false, error: error.toString() };
       }
     }
@@ -613,7 +690,6 @@
     }
 
     function parseSheetDate(str) {
-      // Expects "DD/MM/YYYY" or valid localized format
       const parts = str.split('/');
       if(parts.length === 3) {
         return { day: parts[0], month: parts[1], year: parts[2] };
@@ -639,8 +715,6 @@
 
     function renderTree() {
       ui.treeContainer.innerHTML = '';
-      
-      // Grouping process
       const tree = {};
       
       state.allLogs.forEach(log => {
@@ -649,9 +723,8 @@
         
         const { day, month, year } = parsed;
         
-        // Date filter application if active
         if (state.filteredDate) {
-          const fd = state.filteredDate.split('-'); // ["YYYY", "MM", "DD"]
+          const fd = state.filteredDate.split('-'); 
           if (year !== fd[0] || month !== fd[1] || day !== fd[2]) return;
         }
 
@@ -672,7 +745,6 @@
 
       const monthsNames = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-      // Render Structural Logic
       Object.keys(tree).sort().reverse().forEach(year => {
         const yNode = createNode(`Year: ${year}`, tree[year].p, tree[year].r);
         const yContent = yNode.querySelector('.tree-content');
@@ -814,8 +886,41 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    // NEW FEATURES: Modal Management Trigger System
+    function openConfirmationFlow(mode) {
+      state.pendingBulkMode = mode;
+      ui.confirmTitle.innerText = `Confirm Bulk ${mode.toUpperCase()}`;
+      ui.confirmBody.innerText = `Kya aap chuni hui date (${state.filteredDate}) ke liye pure bulk metrics execute karna chahte hain?`;
+      ui.confirmModal.classList.remove('hidden');
+    }
+
+    function closeConfirmationFlow() {
+      ui.confirmModal.classList.add('hidden');
+      state.pendingBulkMode = null;
+    }
+
+    async function executeConfirmedBulkFetch() {
+      const mode = state.pendingBulkMode;
+      const targetDate = state.filteredDate;
+      closeConfirmationFlow();
+
+      showSpinner(true);
+      const response = await makeApiCall({
+        action: 'processBulkFetch',
+        date: targetDate,
+        mode: mode
+      });
+      showSpinner(false);
+
+      if (response && response.success) {
+        showToast('Bulk Action Complete', response.message, 'success');
+        loadCounts(); // Sync changes back instantly
+      } else {
+        showToast('Bulk Error', (response && response.error) || 'Unknown processing breakdown', 'error');
+      }
+    }
+
     function initInterface() {
-      // Light Mode / Dark Mode Toggle Logic
       ui.btnThemeToggle.addEventListener('click', () => {
         const currentTheme = document.documentElement.getAttribute('data-theme');
         if (currentTheme === 'dark') {
@@ -827,14 +932,9 @@
         }
       });
 
-      // All Close Top Button Trigger
       ui.btnAllClose.addEventListener('click', closeAllPanels);
+      ui.btnDailyScan.addEventListener('click', () => { ui.modePanel.classList.toggle('open'); });
 
-      ui.btnDailyScan.addEventListener('click', () => {
-        ui.modePanel.classList.toggle('open');
-      });
-
-      // Selection State Buttons Color Logic
       ui.btnModePickup.addEventListener('click', () => {
         state.currentMode = 'Pickup';
         resetModeButtons();
@@ -867,14 +967,11 @@
       });
 
       ui.awbInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          handleAwbSubmission(ui.awbInput.value);
-        }
+        if (e.key === 'Enter') { handleAwbSubmission(ui.awbInput.value); }
       });
 
       ui.btnSave.addEventListener('click', async () => {
         if (!state.scannedData) return;
-
         const response = await makeApiCall({ action: 'saveData', payload: state.scannedData });
 
         if (response && response.success) {
@@ -882,14 +979,10 @@
           ui.awbInput.value = '';
           ui.resultPanel.classList.add('hidden');
           state.scannedData = null;
-          
-          await loadCounts(); // Reload Counts Panel Instantly
+          await loadCounts(); 
 
-          if (state.currentMethod === 'camera') {
-            await startCamera();
-          } else {
-            ui.awbInput.focus();
-          }
+          if (state.currentMethod === 'camera') { await startCamera(); } 
+          else { ui.awbInput.focus(); }
         } else if (response && response.duplicate) {
           showToast('Duplicate Found', `Already Saved\nDate: ${response.date}\nTime: ${response.time}`, 'warning');
         } else {
@@ -900,29 +993,37 @@
       ui.btnClose.addEventListener('click', async () => {
         ui.resultPanel.classList.add('hidden');
         state.scannedData = null;
-        if (state.currentMethod === 'camera') {
-          await startCamera();
-        } else {
-          ui.awbInput.value = '';
-          ui.awbInput.focus();
-        }
+        if (state.currentMethod === 'camera') { await startCamera(); } 
+        else { ui.awbInput.value = ''; ui.awbInput.focus(); }
       });
 
-      // Filter Handlers
+      // NEW FEATURE: Filter Inputs & Variable Reset Observers
       ui.dateFilter.addEventListener('input', (e) => {
-        state.filteredDate = e.target.value; // Format: "YYYY-MM-DD"
+        state.filteredDate = e.target.value; 
+        if (state.filteredDate) {
+          ui.lblBulkDate.innerText = state.filteredDate;
+          ui.bulkPanel.classList.remove('hidden'); // Show Bulk tab only when date is selected
+        } else {
+          ui.bulkPanel.classList.add('hidden');
+        }
         renderTree();
       });
 
       ui.btnClearDate.addEventListener('click', () => {
         ui.dateFilter.value = '';
         state.filteredDate = null;
+        ui.bulkPanel.classList.add('hidden'); // Hide Bulk Tab on Clear (X)
         renderTree();
       });
 
+      // Bulk Buttons Interaction Listeners
+      ui.btnBulkPickup.addEventListener('click', () => openConfirmationFlow('pickup'));
+      ui.btnBulkReturn.addEventListener('click', () => openConfirmationFlow('return'));
+      ui.btnModalYes.addEventListener('click', executeConfirmedBulkFetch);
+      ui.btnModalNo.addEventListener('click', closeConfirmationFlow);
+
       ui.btnRefreshCounts.addEventListener('click', loadCounts);
 
-      // Initial Counts Setup
       loadCounts();
     }
 
