@@ -302,6 +302,7 @@
   <div class="toast-container" id="toast-container"></div>
 
   <script>
+    // CRITICAL: Yahan apna Step 1 se mila hua bilkul Naya Deployment Web App URL paste karein!
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwS7HmWoqdBsFe_bC5a8VgMwiggBqhT3unhyj6jkTZmchsIUN892wFj3s-e-7tKdtMJsA/exec";
 
     const state = { currentMode: null, currentMethod: null, html5QrcodeScanner: null, scannedData: null, allLogs: [], filteredDate: null, pendingBulkMode: null };
@@ -339,7 +340,7 @@
       try {
         const response = await fetch(APPS_SCRIPT_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain' },
+          headers: { 'Content-Type': 'text/plain' }, // Using text/plain to avoid preflight CORS blockage
           body: JSON.stringify(data)
         });
         const json = await response.json();
@@ -347,7 +348,7 @@
         return json;
       } catch (error) {
         showSpinner(false);
-        showToast('Bridge Error', 'Network layer validation failed.', 'error');
+        showToast('Bridge Error', 'Network layer validation failed. Check Web App Deployment & URL.', 'error');
         return { success: false, error: error.toString() };
       }
     }
@@ -443,14 +444,14 @@
         ui.resTime.textContent = state.scannedData.time;
         ui.resultPanel.classList.remove('hidden');
       } else {
-        showToast('Fetch Failed', 'API validation rejected.', 'error');
+        showToast('Fetch Failed', response.error || 'API validation rejected.', 'error');
       }
     }
 
     async function startCamera() {
       ui.scannerContainer.classList.remove('hidden');
       ui.inputPanel.classList.remove('hidden');
-      if(typeof Html5Qrcode === 'undefined') { showToast('Engine Pending', 'Library optimization mapping state...', 'error'); return;}
+      if(typeof Html5Qrcode === 'undefined') { showToast('Engine Pending', 'Library scanning mapping state...', 'error'); return;}
       state.html5QrcodeScanner = new Html5Qrcode("qr-reader");
       try {
         await state.html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 20, qrbox: 250 }, (text) => { handleAwbSubmission(text); });
