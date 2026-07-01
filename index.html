@@ -6,32 +6,32 @@
   <title>Daily QR Scanner</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://unpkg.com/html5-qrcode" defer></script>
   <style>
     :root {
-      --bg-gradient: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-      --glass-bg: rgba(255, 255, 255, 0.7);
-      --glass-border: rgba(0, 0, 0, 0.08);
+      --bg-gradient: #f8fafc;
+      --card-bg: #ffffff;
+      --border-color: #e2e8f0;
       --text-main: #0f172a;
       --text-muted: #64748b;
       --primary: #4f46e5;
       --success: #10b981;
       --danger: #ef4444;
-      --card-radius: 24px;
-      --btn-radius: 16px;
-      --input-bg: rgba(255, 255, 255, 0.9);
-      --panel-shadow: 0 8px 32px 0 rgba(148, 163, 184, 0.25);
+      --card-radius: 16px;
+      --btn-radius: 12px;
+      --input-bg: #f1f5f9;
+      --panel-shadow: 0 4px 20px rgba(148, 163, 184, 0.08);
     }
 
     [data-theme="dark"] {
-      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-      --glass-bg: rgba(255, 255, 255, 0.03);
-      --glass-border: rgba(255, 255, 255, 0.08);
+      --bg-gradient: #0f172a;
+      --card-bg: #1e293b;
+      --border-color: #334155;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --primary: #6366f1;
-      --input-bg: rgba(0, 0, 0, 0.2);
-      --panel-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+      --input-bg: #0f172a;
+      --panel-shadow: 0 4px 25px rgba(0, 0, 0, 0.3);
     }
 
     * {
@@ -49,9 +49,8 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 20px;
+      padding: 16px;
       overflow-x: hidden;
-      transition: background 0.3s ease;
     }
 
     .top-actions {
@@ -60,26 +59,21 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 5px;
+      margin-bottom: 12px;
     }
 
     .circle-btn {
-      background: var(--glass-bg);
-      border: 1px solid var(--glass-border);
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
       color: var(--text-main);
-      width: 44px;
-      height: 44px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       box-shadow: var(--panel-shadow);
-      transition: all 0.3s ease;
-    }
-
-    .circle-btn:active {
-      transform: scale(0.9);
     }
 
     .container {
@@ -87,59 +81,52 @@
       max-width: 440px;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 16px;
     }
 
     header {
       text-align: center;
-      margin-bottom: 5px;
+      margin-bottom: 4px;
     }
 
     header h1 {
-      font-size: 1.6rem;
+      font-size: 1.5rem;
       font-weight: 700;
-      letter-spacing: -0.5px;
     }
 
     header p {
       font-size: 0.85rem;
       color: var(--text-muted);
-      margin-top: 4px;
+      margin-top: 2px;
     }
 
     .card {
-      background: var(--glass-bg);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--glass-border);
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
       border-radius: var(--card-radius);
-      padding: 24px;
+      padding: 20px;
       box-shadow: var(--panel-shadow);
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 12px;
+      gap: 10px;
       width: 100%;
-      padding: 18px;
+      padding: 14px;
       border: none;
       border-radius: var(--btn-radius);
-      font-size: 1rem;
+      font-size: 0.95rem;
       font-weight: 600;
       color: #fff;
       cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transition: background 0.2s ease;
     }
 
-    .btn:active {
-      transform: scale(0.98);
-    }
-
+    .btn:active { transform: scale(0.99); }
     .btn-primary { background: var(--primary); }
+    .btn-success { background: var(--success); }
 
     .btn-mode-p {
       background: transparent;
@@ -161,58 +148,44 @@
       color: #fff !important;
     }
 
-    .btn-secondary { background: rgba(0, 0, 0, 0.05); color: var(--text-main); border: 1px solid var(--glass-border); }
-    [data-theme="dark"] .btn-secondary { background: rgba(255, 255, 255, 0.08); color: #fff; }
+    .btn-secondary { background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-color); }
 
-    .hidden {
-      display: none !important;
-    }
+    .hidden { display: none !important; }
 
     .slide-panel {
       max-height: 0;
       overflow: hidden;
-      transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: max-height 0.25s ease-out;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
     }
 
     .slide-panel.open {
-      max-height: 200px;
-      margin-top: 14px;
+      max-height: 150px;
+      margin-top: 12px;
     }
 
     .mode-indicators {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px;
+      gap: 10px;
     }
 
     .sub-panel {
       display: flex;
       flex-direction: column;
-      gap: 16px;
-      animation: fadeIn 0.4s ease forwards;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .input-wrapper {
-      position: relative;
-      width: 100%;
+      gap: 12px;
     }
 
     .text-input {
       width: 100%;
-      padding: 16px;
+      padding: 14px;
       background: var(--input-bg);
-      border: 1px solid var(--glass-border);
+      border: 1px solid var(--border-color);
       border-radius: var(--btn-radius);
       color: var(--text-main);
-      font-size: 1rem;
+      font-size: 0.95rem;
       outline: none;
     }
 
@@ -224,88 +197,64 @@
       background: #000;
     }
 
-    #qr-reader {
-      width: 100% !important;
-      border: none !important;
-    }
-
-    #qr-reader__dashboard, #qr-reader__header {
-      display: none !important;
-    }
+    #qr-reader { width: 100% !important; border: none !important; }
+    #qr-reader__dashboard, #qr-reader__header { display: none !important; }
 
     .result-table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 8px;
     }
 
     .result-table td {
-      padding: 10px 0;
-      border-bottom: 1px solid var(--glass-border);
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border-color);
       font-size: 0.9rem;
     }
 
-    .result-table td:first-child {
-      color: var(--text-muted);
-      width: 40%;
-    }
-
-    .result-table td:last-child {
-      color: var(--text-main);
-      font-weight: 600;
-      text-align: right;
-    }
+    .result-table td:first-child { color: var(--text-muted); width: 35%; }
+    .result-table td:last-child { color: var(--text-main); font-weight: 600; text-align: right; }
 
     .badge {
       display: inline-block;
-      padding: 4px 8px;
-      border-radius: 8px;
+      padding: 2px 6px;
+      border-radius: 6px;
       font-size: 0.75rem;
       font-weight: 700;
     }
-
-    .badge-pickup { background: rgba(16, 185, 129, 0.2); color: #059669; }
-    [data-theme="dark"] .badge-pickup { color: #34d399; }
-    .badge-return { background: rgba(239, 68, 68, 0.2); color: #dc2626; }
-    [data-theme="dark"] .badge-return { color: #f87171; }
+    .badge-pickup { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+    .badge-return { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
 
     .count-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 14px;
-    }
-
-    .count-header h3 {
-      font-size: 1.1rem;
-      font-weight: 600;
+      margin-bottom: 12px;
     }
 
     .filter-bar {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
 
     .date-picker {
       flex: 1;
-      padding: 12px;
-      border: 1px solid var(--glass-border);
-      border-radius: 12px;
+      padding: 10px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
       background: var(--input-bg);
       color: var(--text-main);
       font-size: 0.9rem;
-      outline: none;
     }
 
     .clear-filter-btn {
       background: var(--danger);
       color: white;
       border: none;
-      width: 38px;
-      height: 38px;
-      border-radius: 10px;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -313,191 +262,135 @@
     }
 
     .tree-node {
-      margin-bottom: 8px;
-      border-radius: 12px;
+      margin-bottom: 6px;
+      border-radius: 10px;
       overflow: hidden;
-      border: 1px solid var(--glass-border);
+      border: 1px solid var(--border-color);
     }
 
     .tree-header {
-      background: rgba(0, 0, 0, 0.02);
-      padding: 14px;
+      background: var(--input-bg);
+      padding: 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       cursor: pointer;
-      user-select: none;
       font-weight: 600;
-      font-size: 0.95rem;
-    }
-    [data-theme="dark"] .tree-header { background: rgba(255, 255, 255, 0.02); }
-
-    .tree-header-left {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      font-size: 0.9rem;
     }
 
-    .tree-chips {
-      display: flex;
-      gap: 6px;
-    }
-
-    .chip {
-      font-size: 0.75rem;
-      padding: 2px 8px;
-      border-radius: 6px;
-      font-weight: 600;
-    }
-    .chip-p { background: rgba(16, 185, 129, 0.15); color: #059669; }
-    [data-theme="dark"] .chip-p { color: #34d399; }
-    .chip-r { background: rgba(239, 68, 68, 0.15); color: #dc2626; }
-    [data-theme="dark"] .chip-r { color: #f87171; }
+    .tree-chips { display: flex; gap: 4px; }
+    .chip { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
+    .chip-p { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+    .chip-r { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
 
     .tree-content {
-      padding: 10px 14px;
-      background: rgba(255, 255, 255, 0.3);
+      padding: 8px 12px;
+      background: var(--card-bg);
       display: none;
       flex-direction: column;
-      gap: 6px;
+      gap: 4px;
     }
-    [data-theme="dark"] .tree-content { background: rgba(0, 0, 0, 0.1); }
 
-    /* NEW STYLING: Dynamic Bulk Controls Panel CSS Layout */
     .bulk-operational-tab {
-      background: rgba(79, 70, 229, 0.06);
+      background: rgba(79, 70, 229, 0.05);
       border: 1px dashed var(--primary);
-      border-radius: 16px;
-      padding: 16px;
-      margin-bottom: 16px;
-      animation: fadeIn 0.3s ease;
-    }
-    .bulk-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 10px;
-    }
-    .btn-bulk {
-      padding: 12px;
-      font-size: 0.9rem;
       border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 12px;
     }
+    .bulk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+    .btn-bulk { padding: 10px; font-size: 0.85rem; border-radius: 8px; }
 
-    /* Embedded WebApp Floating Modal Window */
     .app-modal-overlay {
       position: fixed;
       top:0; left:0; right:0; bottom:0;
-      background: rgba(15, 23, 42, 0.6);
-      backdrop-filter: blur(4px);
+      background: rgba(15, 23, 42, 0.5);
       display: flex;
       justify-content: center;
       align-items: center;
       z-index: 10000;
     }
     .app-modal {
-      background: var(--bg-gradient);
-      border: 1px solid var(--glass-border);
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
       width: calc(100% - 40px);
-      max-width: 360px;
-      border-radius: 20px;
-      padding: 20px;
-      box-shadow: var(--panel-shadow);
+      max-width: 340px;
+      border-radius: 16px;
+      padding: 16px;
       text-align: center;
     }
-    .app-modal h4 { margin-bottom: 8px; font-size: 1.15rem; font-weight: 700; }
-    .app-modal p { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; line-height: 1.4; }
-    .modal-actions { display: flex; gap: 10px; }
+    .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
 
     .toast-container {
       position: fixed;
-      bottom: 30px;
+      bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 9999;
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      width: calc(100% - 40px);
+      gap: 8px;
+      width: calc(100% - 32px);
       max-width: 400px;
     }
 
     .toast {
-      background: var(--glass-bg);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+      background: var(--card-bg);
       border-left: 4px solid var(--primary);
-      padding: 16px;
-      border-radius: 12px;
+      padding: 12px;
+      border-radius: 8px;
       box-shadow: var(--panel-shadow);
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       color: var(--text-main);
-      transition: opacity 0.3s ease;
     }
-
     .toast.success { border-left-color: var(--success); }
     .toast.error { border-left-color: var(--danger); }
-    .toast.warning { border-left-color: #f59e0b; }
 
     .spinner-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(15, 23, 42, 0.4);
-      backdrop-filter: blur(4px);
+      background: rgba(15, 23, 42, 0.3);
       z-index: 9998;
       display: flex;
       justify-content: center;
       align-items: center;
     }
-
     .spinner {
-      width: 48px;
-      height: 48px;
-      border: 4px solid rgba(0, 0, 0, 0.1);
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(0, 0, 0, 0.1);
       border-left-color: var(--primary);
       border-radius: 50%;
-      animation: spin 1s linear infinite;
+      animation: spin 0.8s linear infinite;
     }
-    [data-theme="dark"] .spinner { border: 4px solid rgba(255, 255, 255, 0.1); border-left-color: var(--primary); }
-
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
 
   <div class="top-actions">
-    <button class="circle-btn" id="btn-all-close" title="Close All">
-      <span class="material-icons">close</span>
-    </button>
-    <button class="circle-btn" id="btn-theme-toggle">
-      <span class="material-icons" id="theme-icon">dark_mode</span>
-    </button>
+    <button class="circle-btn" id="btn-all-close"><span class="material-icons">close</span></button>
+    <button class="circle-btn" id="btn-theme-toggle"><span class="material-icons" id="theme-icon">dark_mode</span></button>
   </div>
 
   <div class="container">
     <header>
       <h1>Daily QR Scanner</h1>
-      <p>Professional Warehouse Management</p>
+      <p>Warehouse Dashboard Engine</p>
     </header>
 
     <div class="card" id="home-panel">
       <button class="btn btn-primary" id="btn-daily-scan">
-        <span class="material-icons">qr_code_scanner</span>
-        Daily Scan
+        <span class="material-icons">qr_code_scanner</span> Daily Scan
       </button>
 
       <div class="slide-panel" id="mode-panel">
         <div class="mode-indicators">
-          <button class="btn btn-mode-p" id="btn-mode-pickup">
-            <span class="material-icons">local_shipping</span>
-            Pickup
-          </button>
-          <button class="btn btn-mode-r" id="btn-mode-return">
-            <span class="material-icons">assignment_return</span>
-            Return
-          </button>
+          <button class="btn btn-mode-p" id="btn-mode-pickup"><span class="material-icons">local_shipping</span>Pickup</button>
+          <button class="btn btn-mode-r" id="btn-mode-return"><span class="material-icons">assignment_return</span>Return</button>
         </div>
       </div>
     </div>
@@ -505,37 +398,23 @@
     <div class="card hidden" id="action-selection-panel">
       <div class="sub-panel">
         <div class="mode-indicators">
-          <button class="btn btn-secondary" id="btn-action-camera">
-            <span class="material-icons">photo_camera</span>
-            Camera
-          </button>
-          <button class="btn btn-secondary" id="btn-action-manual">
-            <span class="material-icons">keyboard</span>
-            Manual
-          </button>
+          <button class="btn btn-secondary" id="btn-action-camera"><span class="material-icons">photo_camera</span>Camera</button>
+          <button class="btn btn-secondary" id="btn-action-manual"><span class="material-icons">keyboard</span>Manual</button>
         </div>
       </div>
     </div>
 
     <div class="card hidden" id="input-panel">
       <div class="sub-panel">
-        <div id="scanner-container" class="hidden">
-          <div id="qr-reader"></div>
-        </div>
+        <div id="scanner-container" class="hidden"><div id="qr-reader"></div></div>
         <div id="manual-container" class="hidden">
-          <div class="input-wrapper">
-            <input type="text" id="awb-input" class="text-input" placeholder="Enter or Scan AWB Number">
-          </div>
+          <input type="text" id="awb-input" class="text-input" placeholder="Enter or Scan AWB Number">
         </div>
       </div>
     </div>
 
     <div class="card hidden" id="result-panel">
       <div class="sub-panel">
-        <h3 style="font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
-          <span class="material-icons" style="color: var(--primary)">description</span>
-          Shipment Details
-        </h3>
         <table class="result-table">
           <tr><td>AWB</td><td id="res-awb">-</td></tr>
           <tr><td>Order ID</td><td id="res-order-id">-</td></tr>
@@ -544,7 +423,7 @@
           <tr><td>Date</td><td id="res-date">-</td></tr>
           <tr><td>Time</td><td id="res-time">-</td></tr>
         </table>
-        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
           <button class="btn btn-success" id="btn-save"><span class="material-icons">save</span>Save Entry</button>
           <button class="btn btn-secondary" id="btn-close"><span class="material-icons">close</span>Close</button>
         </div>
@@ -553,22 +432,20 @@
 
     <div class="card" id="count-panel">
       <div class="count-header">
-        <h3><span class="material-icons" style="vertical-align: bottom; margin-right: 6px; color: var(--primary)">bar_chart</span>Daily Counts</h3>
-        <button class="circle-btn" id="btn-refresh-counts" style="width:34px; height:34px;"><span class="material-icons" style="font-size:18px;">refresh</span></button>
+        <h3>Daily Counts</h3>
+        <button class="circle-btn" id="btn-refresh-counts" style="width:32px; height:32px;"><span class="material-icons" style="font-size:16px;">refresh</span></button>
       </div>
       
       <div class="filter-bar">
         <input type="date" id="count-date-filter" class="date-picker">
-        <button class="clear-filter-btn" id="btn-clear-date" title="Clear Inputs to Default"><span class="material-icons">clear</span></button>
+        <button class="clear-filter-btn" id="btn-clear-date"><span class="material-icons">clear</span></button>
       </div>
 
       <div id="bulk-operational-panel" class="bulk-operational-tab hidden">
-        <div style="font-size:0.85rem; font-weight:600; color:var(--primary); display:flex; align-items:center; gap:4px;">
-          <span class="material-icons" style="font-size:16px">sync_alt</span> Bulk Operations for <span id="lbl-bulk-date"></span>
-        </div>
+        <div style="font-size:0.8rem; font-weight:600; color:var(--primary);">Bulk Operations for <span id="lbl-bulk-date"></span></div>
         <div class="bulk-grid">
-          <button class="btn btn-success btn-bulk" id="btn-bulk-pickup"><span class="material-icons" style="font-size:16px;">download</span>Pickup Bulk</button>
-          <button class="btn btn-mode-r active btn-bulk" id="btn-bulk-return"><span class="material-icons" style="font-size:16px;">replay</span>Return Bulk</button>
+          <button class="btn btn-success btn-bulk" id="btn-bulk-pickup">Pickup Bulk</button>
+          <button class="btn btn-mode-r active btn-bulk" id="btn-bulk-return">Return Bulk</button>
         </div>
       </div>
 
@@ -579,10 +456,10 @@
   <div id="custom-confirm-modal" class="app-modal-overlay hidden">
     <div class="app-modal">
       <h4 id="confirm-modal-title">Confirm Action</h4>
-      <p id="confirm-modal-body">Are you sure you want to proceed with executing bulk API fetching matching logs?</p>
+      <p id="confirm-modal-body">Are you sure you want to proceed?</p>
       <div class="modal-actions">
-        <button class="btn btn-secondary" style="padding:12px;" id="btn-modal-no">No</button>
-        <button class="btn btn-primary" style="padding:12px;" id="btn-modal-yes">Yes</button>
+        <button class="btn btn-secondary" style="padding:10px;" id="btn-modal-no">No</button>
+        <button class="btn btn-primary" style="padding:10px;" id="btn-modal-yes">Yes</button>
       </div>
     </div>
   </div>
@@ -591,71 +468,31 @@
   <div class="toast-container" id="toast-container"></div>
 
   <script>
-    // Configured backend deploy endpoints tracking metrics
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxHmTKmNuNHtgN_qztfcF1KNoKnDqxgO_N7TojDL030s17S3jhORf0H5wtmqPs9HHju9w/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx5W4ESqdppa8UZNH5tsFCLAPPFYz_lZE3l2W_OoaCygqVLfMSu2K5oVHgmDlKe2XHd_Q/exec";
 
-    const state = {
-      currentMode: null, 
-      currentMethod: null, 
-      html5QrcodeScanner: null,
-      scannedData: null,
-      allLogs: [],
-      filteredDate: null,
-      pendingBulkMode: null 
-    };
+    const state = { currentMode: null, currentMethod: null, html5QrcodeScanner: null, scannedData: null, allLogs: [], filteredDate: null, pendingBulkMode: null };
 
     const ui = {
-      btnAllClose: document.getElementById('btn-all-close'),
-      btnThemeToggle: document.getElementById('btn-theme-toggle'),
-      themeIcon: document.getElementById('theme-icon'),
-      btnDailyScan: document.getElementById('btn-daily-scan'),
-      modePanel: document.getElementById('mode-panel'),
-      btnModePickup: document.getElementById('btn-mode-pickup'),
-      btnModeReturn: document.getElementById('btn-mode-return'),
-      actionSelectionPanel: document.getElementById('action-selection-panel'),
-      btnActionCamera: document.getElementById('btn-action-camera'),
-      btnActionManual: document.getElementById('btn-action-manual'),
-      inputPanel: document.getElementById('input-panel'),
-      scannerContainer: document.getElementById('scanner-container'),
-      manualContainer: document.getElementById('manual-container'),
-      awbInput: document.getElementById('awb-input'),
-      resultPanel: document.getElementById('result-panel'),
-      btnSave: document.getElementById('btn-save'),
-      btnClose: document.getElementById('btn-close'),
-      spinner: document.getElementById('loading-spinner'),
-      toastContainer: document.getElementById('toast-container'),
-      resAwb: document.getElementById('res-awb'),
-      resOrderId: document.getElementById('res-order-id'),
-      resStatus: document.getElementById('res-status'),
-      resMode: document.getElementById('res-mode'),
-      resDate: document.getElementById('res-date'),
-      resTime: document.getElementById('res-time'),
-      treeContainer: document.getElementById('tree-container'),
-      dateFilter: document.getElementById('count-date-filter'),
-      btnClearDate: document.getElementById('btn-clear-date'),
-      btnRefreshCounts: document.getElementById('btn-refresh-counts'),
-      // Bulk Elements
-      bulkPanel: document.getElementById('bulk-operational-panel'),
-      lblBulkDate: document.getElementById('lbl-bulk-date'),
-      btnBulkPickup: document.getElementById('btn-bulk-pickup'),
-      btnBulkReturn: document.getElementById('btn-bulk-return'),
-      confirmModal: document.getElementById('custom-confirm-modal'),
-      btnModalYes: document.getElementById('btn-modal-yes'),
-      btnModalNo: document.getElementById('btn-modal-no'),
-      confirmTitle: document.getElementById('confirm-modal-title'),
-      confirmBody: document.getElementById('confirm-modal-body')
+      btnAllClose: document.getElementById('btn-all-close'), btnThemeToggle: document.getElementById('btn-theme-toggle'), themeIcon: document.getElementById('theme-icon'),
+      btnDailyScan: document.getElementById('btn-daily-scan'), modePanel: document.getElementById('mode-panel'), btnModePickup: document.getElementById('btn-mode-pickup'),
+      btnModeReturn: document.getElementById('btn-mode-return'), actionSelectionPanel: document.getElementById('action-selection-panel'), btnActionCamera: document.getElementById('btn-action-camera'),
+      btnActionManual: document.getElementById('btn-action-manual'), inputPanel: document.getElementById('input-panel'), scannerContainer: document.getElementById('scanner-container'),
+      manualContainer: document.getElementById('manual-container'), awbInput: document.getElementById('awb-input'), resultPanel: document.getElementById('result-panel'),
+      btnSave: document.getElementById('btn-save'), btnClose: document.getElementById('btn-close'), spinner: document.getElementById('loading-spinner'),
+      toastContainer: document.getElementById('toast-container'), resAwb: document.getElementById('res-awb'), resOrderId: document.getElementById('res-order-id'),
+      resStatus: document.getElementById('res-status'), resMode: document.getElementById('res-mode'), resDate: document.getElementById('res-date'), resTime: document.getElementById('res-time'),
+      treeContainer: document.getElementById('tree-container'), dateFilter: document.getElementById('count-date-filter'), btnClearDate: document.getElementById('btn-clear-date'),
+      btnRefreshCounts: document.getElementById('btn-refresh-counts'), bulkPanel: document.getElementById('bulk-operational-panel'), lblBulkDate: document.getElementById('lbl-bulk-date'),
+      btnBulkPickup: document.getElementById('btn-bulk-pickup'), btnBulkReturn: document.getElementById('btn-bulk-return'), confirmModal: document.getElementById('custom-confirm-modal'),
+      btnModalYes: document.getElementById('btn-modal-yes'), btnModalNo: document.getElementById('btn-modal-no'), confirmTitle: document.getElementById('confirm-modal-title'), confirmBody: document.getElementById('confirm-modal-body')
     };
 
     function showToast(title, message, type = 'success') {
       const toast = document.createElement('div');
       toast.className = `toast ${type}`;
-      let icon = type === 'error' ? 'error' : (type === 'warning' ? 'warning' : 'check_circle');
-      toast.innerHTML = `<span class="material-icons">${icon}</span><div class="toast-content"><h4>${title}</h4><p>${message}</p></div>`;
+      toast.innerHTML = `<div class="toast-content"><h4>${title}</h4><p>${message}</p></div>`;
       ui.toastContainer.appendChild(toast);
-      setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 300);
-      }, 4000);
+      setTimeout(() => { toast.remove(); }, 3500);
     }
 
     function showSpinner(show) {
@@ -668,7 +505,6 @@
       try {
         const response = await fetch(APPS_SCRIPT_URL, {
           method: 'POST',
-          mode: 'cors',
           headers: { 'Content-Type': 'text/plain' },
           body: JSON.stringify(data)
         });
@@ -677,7 +513,7 @@
         return json;
       } catch (error) {
         showSpinner(false);
-        showToast('Network Error', 'Backend server connection error structural crash', 'error');
+        showToast('Connection Error', 'Backend server network bridge breakdown.', 'error');
         return { success: false, error: error.toString() };
       }
     }
@@ -685,23 +521,13 @@
     function getFormattedDateTime() {
       const now = new Date();
       const date = now.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-      const time = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+      const time = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
       return { date, time };
     }
 
     function parseSheetDate(str) {
       const parts = str.split('/');
-      if(parts.length === 3) {
-        return { day: parts[0], month: parts[1], year: parts[2] };
-      }
-      const d = new Date(str);
-      if(!isNaN(d.getTime())) {
-        return {
-          day: String(d.getDate()).padStart(2, '0'),
-          month: String(d.getMonth() + 1).padStart(2, '0'),
-          year: String(d.getFullYear())
-        };
-      }
+      if(parts.length === 3) return { day: parts[0], month: parts[1], year: parts[2] };
       return null;
     }
 
@@ -720,56 +546,33 @@
       state.allLogs.forEach(log => {
         const parsed = parseSheetDate(log.date);
         if(!parsed) return;
-        
         const { day, month, year } = parsed;
-        
         if (state.filteredDate) {
           const fd = state.filteredDate.split('-'); 
           if (year !== fd[0] || month !== fd[1] || day !== fd[2]) return;
         }
-
         if (!tree[year]) tree[year] = { p: 0, r: 0, months: {} };
         if (!tree[year].months[month]) tree[year].months[month] = { p: 0, r: 0, days: {} };
         if (!tree[year].months[month].days[day]) tree[year].months[month].days[day] = { p: 0, r: 0 };
         
-        if (log.mode === 'Pickup') {
-          tree[year].p++;
-          tree[year].months[month].p++;
-          tree[year].months[month].days[day].p++;
-        } else {
-          tree[year].r++;
-          tree[year].months[month].r++;
-          tree[year].months[month].days[day].r++;
-        }
+        if (log.mode === 'Pickup') { tree[year].p++; tree[year].months[month].p++; tree[year].months[month].days[day].p++; } 
+        else { tree[year].r++; tree[year].months[month].r++; tree[year].months[month].days[day].r++; }
       });
-
-      const monthsNames = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
       Object.keys(tree).sort().reverse().forEach(year => {
         const yNode = createNode(`Year: ${year}`, tree[year].p, tree[year].r);
         const yContent = yNode.querySelector('.tree-content');
-        
         Object.keys(tree[year].months).sort().reverse().forEach(month => {
-          const mIndex = parseInt(month, 10);
-          const mLabel = monthsNames[mIndex] || `Month ${month}`;
-          const mNode = createNode(mLabel, tree[year].months[month].p, tree[year].months[month].r);
+          const mNode = createNode(`Month ${month}`, tree[year].months[month].p, tree[year].months[month].r);
           const mContent = mNode.querySelector('.tree-content');
-          
           Object.keys(tree[year].months[month].days).sort().reverse().forEach(day => {
-            const dLabel = `Date: ${day}/${month}/${year}`;
-            const dNode = createNode(dLabel, tree[year].months[month].days[day].p, tree[year].months[month].days[day].r, true);
+            const dNode = createNode(`Date: ${day}/${month}/${year}`, tree[year].months[month].days[day].p, tree[year].months[month].days[day].r, true);
             mContent.appendChild(dNode);
           });
-          
           yContent.appendChild(mNode);
         });
-        
         ui.treeContainer.appendChild(yNode);
       });
-
-      if (ui.treeContainer.innerHTML === '') {
-        ui.treeContainer.innerHTML = '<p style="text-align:center; font-size:0.85rem; color:var(--text-muted); padding:10px;">No record logs found.</p>';
-      }
     }
 
     function createNode(label, pCount, rCount, isLeaf = false) {
@@ -777,29 +580,15 @@
       div.className = 'tree-node';
       div.innerHTML = `
         <div class="tree-header">
-          <div class="tree-header-left">
-            ${!isLeaf ? '<span class="material-icons" style="font-size:18px; color:var(--text-muted)">chevron_right</span>' : '<span class="material-icons" style="font-size:16px; color:var(--text-muted)">calendar_today</span>'}
-            <span>${label}</span>
-          </div>
-          <div class="tree-chips">
-            <span class="chip chip-p">P: ${pCount}</span>
-            <span class="chip chip-r">R: ${rCount}</span>
-          </div>
+          <span>${label}</span>
+          <div class="tree-chips"><span class="chip chip-p">P: ${pCount}</span><span class="chip chip-r">R: ${rCount}</span></div>
         </div>
         ${!isLeaf ? '<div class="tree-content"></div>' : ''}
       `;
-
       if (!isLeaf) {
-        const header = div.querySelector('.tree-header');
-        const content = div.querySelector('.tree-content');
-        const icon = div.querySelector('.tree-header-left .material-icons');
-        
-        header.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const isOpen = content.style.display === 'flex';
-          content.style.display = isOpen ? 'none' : 'flex';
-          icon.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
-          icon.style.transition = 'transform 0.2s';
+        div.querySelector('.tree-header').addEventListener('click', () => {
+          const c = div.querySelector('.tree-content');
+          c.style.display = c.style.display === 'flex' ? 'none' : 'flex';
         });
       }
       return div;
@@ -808,225 +597,84 @@
     async function handleAwbSubmission(awb) {
       if (!awb || awb.trim() === "") return;
       await stopCamera();
-      
       const response = await makeApiCall({ action: 'fetchDelhivery', awb: awb.trim() });
-
       if (response && response.success) {
         const dateTime = getFormattedDateTime();
-        state.scannedData = {
-          awb: response.data.awb,
-          orderId: response.data.orderId,
-          status: response.data.status,
-          mode: state.currentMode,
-          date: dateTime.date,
-          time: dateTime.time
-        };
-
+        state.scannedData = { awb: response.data.awb, orderId: response.data.orderId, status: response.data.status, mode: state.currentMode, date: dateTime.date, time: dateTime.time };
         ui.resAwb.textContent = state.scannedData.awb;
         ui.resOrderId.textContent = state.scannedData.orderId;
         ui.resStatus.textContent = state.scannedData.status;
         ui.resMode.innerHTML = `<span class="badge badge-${state.currentMode.toLowerCase()}">${state.currentMode}</span>`;
         ui.resDate.textContent = state.scannedData.date;
         ui.resTime.textContent = state.scannedData.time;
-
         ui.resultPanel.classList.remove('hidden');
-        ui.resultPanel.scrollIntoView({ behavior: 'smooth' });
       } else {
-        showToast('Fetch Failed', (response && response.error) || 'Invalid AWB or system error', 'error');
-        if (state.currentMethod === 'camera') startCamera();
+        showToast('Fetch Failed', 'Invalid AWB or status error', 'error');
       }
     }
 
     async function startCamera() {
       ui.scannerContainer.classList.remove('hidden');
       ui.inputPanel.classList.remove('hidden');
-      
+      if(typeof Html5Qrcode === 'undefined') { showToast('Engine Error', 'Scanner components still caching...', 'error'); return;}
       state.html5QrcodeScanner = new Html5Qrcode("qr-reader");
-      const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-      
       try {
-        await state.html5QrcodeScanner.start(
-          { facingMode: "environment" },
-          config,
-          (decodedText) => {
-            ui.awbInput.value = decodedText;
-            handleAwbSubmission(decodedText);
-          },
-          () => {}
-        );
-      } catch (err) {
-        showToast('Camera Error', 'Could not access back camera hardware context initialization failed', 'error');
-      }
+        await state.html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (text) => { handleAwbSubmission(text); });
+      } catch (err) { showToast('Hardware Error', 'Camera permission block.', 'error'); }
     }
 
     async function stopCamera() {
       if (state.html5QrcodeScanner && state.html5QrcodeScanner.isScanning) {
-        try { await state.html5QrcodeScanner.stop(); } catch (e) { console.error(e); }
+        try { await state.html5QrcodeScanner.stop(); } catch(e){}
       }
       ui.scannerContainer.classList.add('hidden');
     }
 
-    function resetModeButtons() {
-      ui.btnModePickup.classList.remove('active');
-      ui.btnModeReturn.classList.remove('active');
-    }
-
-    async function closeAllPanels() {
-      await stopCamera();
-      ui.resultPanel.classList.add('hidden');
-      ui.inputPanel.classList.add('hidden');
-      ui.manualContainer.classList.add('hidden');
-      ui.actionSelectionPanel.classList.add('hidden');
-      ui.modePanel.classList.remove('open');
-      ui.awbInput.value = '';
-      state.currentMode = null;
-      state.currentMethod = null;
-      state.scannedData = null;
-      resetModeButtons();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    // NEW FEATURES: Modal Management Trigger System
-    function openConfirmationFlow(mode) {
-      state.pendingBulkMode = mode;
-      ui.confirmTitle.innerText = `Confirm Bulk ${mode.toUpperCase()}`;
-      ui.confirmBody.innerText = `Kya aap chuni hui date (${state.filteredDate}) ke liye pure bulk metrics execute karna chahte hain?`;
-      ui.confirmModal.classList.remove('hidden');
-    }
-
-    function closeConfirmationFlow() {
-      ui.confirmModal.classList.add('hidden');
-      state.pendingBulkMode = null;
-    }
-
-    async function executeConfirmedBulkFetch() {
-      const mode = state.pendingBulkMode;
-      const targetDate = state.filteredDate;
-      closeConfirmationFlow();
-
-      showSpinner(true);
-      const response = await makeApiCall({
-        action: 'processBulkFetch',
-        date: targetDate,
-        mode: mode
-      });
-      showSpinner(false);
-
-      if (response && response.success) {
-        showToast('Bulk Action Complete', response.message, 'success');
-        loadCounts(); // Sync changes back instantly
-      } else {
-        showToast('Bulk Error', (response && response.error) || 'Unknown processing breakdown', 'error');
-      }
-    }
-
     function initInterface() {
       ui.btnThemeToggle.addEventListener('click', () => {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        if (currentTheme === 'dark') {
-          document.documentElement.removeAttribute('data-theme');
-          ui.themeIcon.textContent = 'dark_mode';
-        } else {
-          document.documentElement.setAttribute('data-theme', 'dark');
-          ui.themeIcon.textContent = 'light_mode';
-        }
+        document.documentElement.toggleAttribute('data-theme');
       });
-
-      ui.btnAllClose.addEventListener('click', closeAllPanels);
+      ui.btnAllClose.addEventListener('click', () => { stopCamera(); ui.inputPanel.classList.add('hidden'); ui.resultPanel.classList.add('hidden'); ui.actionSelectionPanel.classList.add('hidden'); ui.modePanel.classList.remove('open'); });
       ui.btnDailyScan.addEventListener('click', () => { ui.modePanel.classList.toggle('open'); });
-
-      ui.btnModePickup.addEventListener('click', () => {
-        state.currentMode = 'Pickup';
-        resetModeButtons();
-        ui.btnModePickup.classList.add('active');
-        ui.actionSelectionPanel.classList.remove('hidden');
-        ui.actionSelectionPanel.scrollIntoView({ behavior: 'smooth' });
-      });
-
-      ui.btnModeReturn.addEventListener('click', () => {
-        state.currentMode = 'Return';
-        resetModeButtons();
-        ui.btnModeReturn.classList.add('active');
-        ui.actionSelectionPanel.classList.remove('hidden');
-        ui.actionSelectionPanel.scrollIntoView({ behavior: 'smooth' });
-      });
-
-      ui.btnActionCamera.addEventListener('click', async () => {
-        state.currentMethod = 'camera';
-        ui.manualContainer.classList.add('hidden');
-        await startCamera();
-      });
-
-      ui.btnActionManual.addEventListener('click', async () => {
-        state.currentMethod = 'manual';
-        await stopCamera();
-        ui.inputPanel.classList.remove('hidden');
-        ui.manualContainer.classList.remove('hidden');
-        ui.awbInput.value = '';
-        ui.awbInput.focus();
-      });
-
-      ui.awbInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') { handleAwbSubmission(ui.awbInput.value); }
-      });
-
+      ui.btnModePickup.addEventListener('click', () => { state.currentMode = 'Pickup'; ui.actionSelectionPanel.classList.remove('hidden'); });
+      ui.btnModeReturn.addEventListener('click', () => { state.currentMode = 'Return'; ui.actionSelectionPanel.classList.remove('hidden'); });
+      ui.btnActionCamera.addEventListener('click', () => { state.currentMethod = 'camera'; ui.manualContainer.classList.add('hidden'); startCamera(); });
+      ui.btnActionManual.addEventListener('click', () => { state.currentMethod = 'manual'; stopCamera(); ui.inputPanel.classList.remove('hidden'); ui.manualContainer.classList.remove('hidden'); ui.awbInput.focus(); });
+      
+      ui.awbInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleAwbSubmission(ui.awbInput.value); });
+      
       ui.btnSave.addEventListener('click', async () => {
         if (!state.scannedData) return;
-        const response = await makeApiCall({ action: 'saveData', payload: state.scannedData });
-
-        if (response && response.success) {
-          showToast('Success', 'Record appended to log sheet perfectly.', 'success');
-          ui.awbInput.value = '';
+        const res = await makeApiCall({ action: 'saveData', payload: state.scannedData });
+        if (res && res.success) {
+          showToast('Success', 'Record appended perfectly.');
           ui.resultPanel.classList.add('hidden');
-          state.scannedData = null;
-          await loadCounts(); 
-
-          if (state.currentMethod === 'camera') { await startCamera(); } 
-          else { ui.awbInput.focus(); }
-        } else if (response && response.duplicate) {
-          showToast('Duplicate Found', `Already Saved\nDate: ${response.date}\nTime: ${response.time}`, 'warning');
-        } else {
-          showToast('Save Failed', (response && response.error) || 'Unknown logging operation failure', 'error');
-        }
+          loadCounts();
+        } else { showToast('Error', 'Save failed', 'error'); }
       });
 
-      ui.btnClose.addEventListener('click', async () => {
-        ui.resultPanel.classList.add('hidden');
-        state.scannedData = null;
-        if (state.currentMethod === 'camera') { await startCamera(); } 
-        else { ui.awbInput.value = ''; ui.awbInput.focus(); }
-      });
-
-      // NEW FEATURE: Filter Inputs & Variable Reset Observers
       ui.dateFilter.addEventListener('input', (e) => {
-        state.filteredDate = e.target.value; 
-        if (state.filteredDate) {
-          ui.lblBulkDate.innerText = state.filteredDate;
-          ui.bulkPanel.classList.remove('hidden'); // Show Bulk tab only when date is selected
-        } else {
-          ui.bulkPanel.classList.add('hidden');
-        }
+        state.filteredDate = e.target.value;
+        if(state.filteredDate) { ui.lblBulkDate.innerText = state.filteredDate; ui.bulkPanel.classList.remove('hidden'); }
         renderTree();
       });
 
-      ui.btnClearDate.addEventListener('click', () => {
-        ui.dateFilter.value = '';
-        state.filteredDate = null;
-        ui.bulkPanel.classList.add('hidden'); // Hide Bulk Tab on Clear (X)
-        renderTree();
+      ui.btnClearDate.addEventListener('click', () => { ui.dateFilter.value = ''; state.filteredDate = null; ui.bulkPanel.classList.add('hidden'); renderTree(); });
+      
+      ui.btnBulkPickup.addEventListener('click', () => { state.pendingBulkMode = 'pickup'; ui.confirmModal.classList.remove('hidden'); });
+      ui.btnBulkReturn.addEventListener('click', () => { state.pendingBulkMode = 'return'; ui.confirmModal.classList.remove('hidden'); });
+      
+      ui.btnModalYes.addEventListener('click', async () => {
+        ui.confirmModal.classList.add('hidden');
+        const res = await makeApiCall({ action: 'processBulkFetch', date: state.filteredDate, mode: state.pendingBulkMode });
+        if(res && res.success) { showToast('Complete', res.message); loadCounts(); }
+        else showToast('Failed', res.error, 'error');
       });
-
-      // Bulk Buttons Interaction Listeners
-      ui.btnBulkPickup.addEventListener('click', () => openConfirmationFlow('pickup'));
-      ui.btnBulkReturn.addEventListener('click', () => openConfirmationFlow('return'));
-      ui.btnModalYes.addEventListener('click', executeConfirmedBulkFetch);
-      ui.btnModalNo.addEventListener('click', closeConfirmationFlow);
-
+      ui.btnModalNo.addEventListener('click', () => ui.confirmModal.classList.add('hidden'));
       ui.btnRefreshCounts.addEventListener('click', loadCounts);
 
       loadCounts();
     }
-
     window.addEventListener('DOMContentLoaded', initInterface);
   </script>
 </body>
