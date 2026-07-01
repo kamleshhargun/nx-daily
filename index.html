@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Daily QR Scanner - Live Bulk Sync</title>
+  <title>Daily QR Scanner - Matrix Pro</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <script src="https://unpkg.com/html5-qrcode"></script>
@@ -96,7 +96,6 @@
     .tree-header-left { display: flex; align-items: center; gap: 8px; }
     .tree-chips { display: flex; gap: 6px; }
     
-    /* Interactive Clickable Chips */
     .chip { font-size: 0.75rem; padding: 4px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
     .chip:active { transform: scale(0.9); }
     .chip-p { background: rgba(16, 185, 129, 0.15); color: #059669; border: 1px solid transparent; }
@@ -122,7 +121,6 @@
 
     .queue-box { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(245, 158, 11, 0.1); border: 1px solid var(--warning); border-radius: var(--btn-radius); font-weight: 600; font-size: 0.95rem; }
 
-    /* NEW STYLING: Elegant Confirmation Popup Overlays */
     .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(6px); z-index: 10000; display: flex; justify-content: center; align-items: center; animation: fadeIn 0.2s ease; }
     .modal-card { width: 90%; max-width: 380px; background: var(--glass-bg); backdrop-filter: blur(25px); border: 1px solid var(--glass-border); border-radius: 24px; padding: 24px; box-shadow: var(--panel-shadow); text-align: center; }
     .modal-card h4 { font-size: 1.2rem; font-weight: 700; margin-bottom: 10px; color: var(--text-main); }
@@ -224,12 +222,12 @@
     </div>
   </div>
 
-  <!-- NEW UI MODAL: Interactive Popup Confirmation Box -->
+  <!-- Modal Overlay -->
   <div class="modal-overlay hidden" id="bulk-confirm-modal">
     <div class="modal-card">
       <span class="material-icons" style="font-size: 48px; color: var(--primary); margin-bottom: 10px;">sync_alt</span>
       <h4 id="modal-title">Fetch Live Data?</h4>
-      <p id="modal-body">Kya aap is din ka pura bulk data Delhivery API se fetch karna chahte hain? Yeh usi row ke aage column G me save hoga.</p>
+      <p id="modal-body">Kya aap is din ka pura bulk data Delhivery API se fetch karna chahte hain? Data sheet me usi row ke aage 12 columns (Col G se R) me update ho jayega.</p>
       <div class="modal-actions">
         <button class="btn btn-secondary" id="btn-modal-no" style="padding: 12px;">No</button>
         <button class="btn btn-primary" id="btn-modal-yes" style="padding: 12px;">Yes, Fetch</button>
@@ -241,7 +239,7 @@
   <div class="toast-container" id="toast-container"></div>
 
   <script>
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwOrohhY9YPQa2CqahmHfpwgMN9yBc9r9avGHkfOQ5K2Ytc336T_nezKuCEUo0qtiysrA/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxa3BDJfZjvrkVUg6u01IumQgAbZMqm4hdm7rlvwA8Nd0-z6aHNe0pteuVUjQO1yeKjkg/exec";
 
     const state = { 
       currentMode: null, 
@@ -251,7 +249,7 @@
       allLogs: [], 
       filteredDate: null,
       bulkQueue: [],
-      modalTarget: { date: null, mode: null } // Holds data during popup confirmation
+      modalTarget: { date: null, mode: null }
     };
 
     const ui = {
@@ -266,8 +264,6 @@
       treeContainer: document.getElementById('tree-container'), dateFilter: document.getElementById('count-date-filter'), btnClearDate: document.getElementById('btn-clear-date'),
       btnRefreshCounts: document.getElementById('btn-refresh-counts'),
       bulkQueuePanel: document.getElementById('bulk-queue-panel'), queueCountText: document.getElementById('queue-count-text'), btnBulkSave: document.getElementById('btn-bulk-save'), btnAddQueue: document.getElementById('btn-add-queue'),
-      
-      // Modal Hooks
       confirmModal: document.getElementById('bulk-confirm-modal'), modalTitle: document.getElementById('modal-title'), modalBody: document.getElementById('modal-body'), btnModalYes: document.getElementById('btn-modal-yes'), btnModalNo: document.getElementById('btn-modal-no')
     };
 
@@ -406,7 +402,6 @@
         const content = div.querySelector('.tree-content');
         const icon = div.querySelector('.tree-header-left .material-icons');
         header.addEventListener('click', (e) => {
-          // Prevent chip click triggering collapse toggle
           if (e.target.classList.contains('chip')) return;
           e.stopPropagation();
           const isOpen = content.style.display === 'flex';
@@ -415,7 +410,6 @@
           icon.style.transition = 'transform 0.2s';
         });
       } else {
-        // Leaf nodes chips setup for popup triggers
         div.querySelectorAll('.chip').forEach(chip => {
           chip.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -428,12 +422,11 @@
       return div;
     }
 
-    // Modal Trigger Configuration
     function triggerBulkModal(date, mode) {
       state.modalTarget.date = date;
       state.modalTarget.mode = mode;
-      ui.modalTitle.textContent = `Sync ${mode} Data?`;
-      ui.modalBody.textContent = `Kya aap ${date} ke saare "${mode}" AWBs ka live data Delhivery se fetch karna chahte hain? Data sheet me usi row ke aage Column G me fill ho jayega.`;
+      ui.modalTitle.textContent = `Sync ${mode} Data Matrix?`;
+      ui.modalBody.textContent = `Kya aap ${date} ke saare "${mode}" AWBs ka live data Delhivery se fetch karna chahte hain? Poora 12 parameters data (Status, Dates, Destination, Invoice/COD amounts) usi row ke aage column G se R tak save ho jayega.`;
       ui.confirmModal.classList.remove('hidden');
     }
 
@@ -443,7 +436,6 @@
       state.modalTarget.mode = null;
     }
 
-    // Bulk Network Sync Execution
     async function confirmAndFetchBulk() {
       const { date, mode } = state.modalTarget;
       hideBulkModal();
@@ -454,11 +446,11 @@
       
       if (response && response.success) {
         playAudioTone('success');
-        showToast('Bulk Sync Done!', `Successfully updated ${response.updatedCount} rows directly inline.`, 'success');
+        showToast('Bulk Matrix Synced!', `Successfully populated 12 tracking columns for ${response.updatedCount} rows directly.`, 'success');
         await loadCounts();
       } else {
         playAudioTone('error');
-        showToast('Sync Failed', response.error || 'API tracking failure', 'error');
+        showToast('Sync Failed', response.error || 'Tracking failure', 'error');
       }
     }
 
@@ -595,7 +587,6 @@
         if (state.currentMethod === 'camera') await startCamera(); else { ui.awbInput.value = ''; ui.awbInput.focus(); }
       });
 
-      // Modal Button Listeners
       ui.btnModalYes.addEventListener('click', confirmAndFetchBulk);
       ui.btnModalNo.addEventListener('click', hideBulkModal);
 
