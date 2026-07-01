@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Daily QR Scanner</title>
+  <title>Daily QR Scanner - Bulk Pro</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <script src="https://unpkg.com/html5-qrcode"></script>
@@ -17,6 +17,7 @@
       --primary: #4f46e5;
       --success: #10b981;
       --danger: #ef4444;
+      --warning: #f59e0b;
       --card-radius: 24px;
       --btn-radius: 16px;
       --input-bg: rgba(255, 255, 255, 0.9);
@@ -34,172 +35,39 @@
       --panel-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Inter', sans-serif;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    body {
-      background: var(--bg-gradient);
-      color: var(--text-main);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-      overflow-x: hidden;
-      transition: background 0.3s ease;
-    }
-
-    .top-actions {
-      width: 100%;
-      max-width: 440px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 5px;
-    }
-
-    .circle-btn {
-      background: var(--glass-bg);
-      border: 1px solid var(--glass-border);
-      color: var(--text-main);
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      box-shadow: var(--panel-shadow);
-      transition: all 0.3s ease;
-    }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background: var(--bg-gradient); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px; overflow-x: hidden; transition: background 0.3s ease; }
+    .top-actions { width: 100%; max-width: 440px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+    .circle-btn { background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-main); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--panel-shadow); transition: all 0.3s ease; }
     .circle-btn:active { transform: scale(0.9); }
-
-    .container {
-      width: 100%;
-      max-width: 440px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    header {
-      text-align: center;
-      margin-bottom: 5px;
-    }
-
+    .container { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 20px; }
+    header { text-align: center; margin-bottom: 5px; }
     header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.5px; }
     header p { font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; }
-
-    .card {
-      background: var(--glass-bg);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--glass-border);
-      border-radius: var(--card-radius);
-      padding: 24px;
-      box-shadow: var(--panel-shadow);
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      width: 100%;
-      padding: 18px;
-      border: none;
-      border-radius: var(--btn-radius);
-      font-size: 1rem;
-      font-weight: 600;
-      color: #fff;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-
+    .card { background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: var(--card-radius); padding: 24px; box-shadow: var(--panel-shadow); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+    
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; width: 100%; padding: 18px; border: none; border-radius: var(--btn-radius); font-size: 1rem; font-weight: 600; color: #fff; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
     .btn:active { transform: scale(0.98); }
     .btn-primary { background: var(--primary); }
-
+    .btn-success { background: var(--success); }
+    .btn-warning { background: var(--warning); }
+    .btn-danger { background: var(--danger); }
     .btn-mode-p { background: transparent; color: var(--success); border: 2px solid var(--success); }
     .btn-mode-p.active { background: var(--success) !important; color: #fff !important; }
-
     .btn-mode-r { background: transparent; color: var(--danger); border: 2px solid var(--danger); }
     .btn-mode-r.active { background: var(--danger) !important; color: #fff !important; }
-
     .btn-secondary { background: rgba(0, 0, 0, 0.05); color: var(--text-main); border: 1px solid var(--glass-border); }
     [data-theme="dark"] .btn-secondary { background: rgba(255, 255, 255, 0.08); color: #fff; }
 
     .hidden { display: none !important; }
-
-    .slide-panel {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    .slide-panel.open { max-height: 250px; margin-top: 14px; }
-
-    .mode-indicators {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    /* Auto Save Toggle Design */
-    .autosave-container {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 16px;
-      background: rgba(79, 70, 229, 0.06);
-      border: 1px dashed var(--primary);
-      border-radius: var(--btn-radius);
-      margin-top: 5px;
-    }
-    .autosave-label { font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 6px; }
-
-    /* Elegant Toggle Switch */
-    .switch { position: relative; display: inline-block; width: 46px; height: 26px; }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .3s; border-radius: 34px; }
-    .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
-    input:checked + .slider { background-color: var(--success); }
-    input:checked + .slider:before { transform: translateX(20px); }
-
-    .sub-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      animation: fadeIn 0.4s ease forwards;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
+    .slide-panel { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; gap: 14px; }
+    .slide-panel.open { max-height: 120px; margin-top: 14px; }
+    .mode-indicators { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    
+    .sub-panel { display: flex; flex-direction: column; gap: 16px; animation: fadeIn 0.4s ease forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .input-wrapper { position: relative; width: 100%; }
-
-    .text-input {
-      width: 100%;
-      padding: 16px;
-      background: var(--input-bg);
-      border: 1px solid var(--glass-border);
-      border-radius: var(--btn-radius);
-      color: var(--text-main);
-      font-size: 1rem;
-      outline: none;
-    }
+    .text-input { width: 100%; padding: 16px; background: var(--input-bg); border: 1px solid var(--glass-border); border-radius: var(--btn-radius); color: var(--text-main); font-size: 1rem; outline: none; }
 
     #scanner-container { width: 100%; border-radius: var(--btn-radius); overflow: hidden; border: 2px dashed var(--text-muted); background: #000; }
     #qr-reader { width: 100% !important; border: none !important; }
@@ -218,16 +86,13 @@
 
     .count-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
     .count-header h3 { font-size: 1.1rem; font-weight: 600; }
-
     .filter-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
     .date-picker { flex: 1; padding: 12px; border: 1px solid var(--glass-border); border-radius: 12px; background: var(--input-bg); color: var(--text-main); font-size: 0.9rem; outline: none; }
-
     .clear-filter-btn { background: var(--danger); color: white; border: none; width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 
     .tree-node { margin-bottom: 8px; border-radius: 12px; overflow: hidden; border: 1px solid var(--glass-border); }
     .tree-header { background: rgba(0, 0, 0, 0.02); padding: 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; font-weight: 600; font-size: 0.95rem; }
     [data-theme="dark"] .tree-header { background: rgba(255, 255, 255, 0.02); }
-
     .tree-header-left { display: flex; align-items: center; gap: 8px; }
     .tree-chips { display: flex; gap: 6px; }
     .chip { font-size: 0.75rem; padding: 2px 8px; border-radius: 6px; font-weight: 600; }
@@ -235,12 +100,11 @@
     [data-theme="dark"] .chip-p { color: #34d399; }
     .chip-r { background: rgba(239, 68, 68, 0.15); color: #dc2626; }
     [data-theme="dark"] .chip-r { color: #f87171; }
-
     .tree-content { padding: 10px 14px; background: rgba(255, 255, 255, 0.3); display: none; flex-direction: column; gap: 6px; }
     [data-theme="dark"] .tree-content { background: rgba(0, 0, 0, 0.1); }
 
     .toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; width: calc(100% - 40px); max-width: 400px; }
-    .toast { background: var(--glass-bg); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-left: 4px solid var(--primary); padding: 16px; border-radius: 12px; box-shadow: var(--panel-shadow); display: flex; align-items: center; gap: 12px; color: var(--text-main); }
+    .toast { background: var(--glass-bg); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-left: 4px solid var(--primary); padding: 16px; border-radius: 12px; box-shadow: var(--panel-shadow); display: flex; align-items: center; gap: 12px; color: var(--text-main); opacity: 1; transition: opacity 0.3s ease; }
     .toast.success { border-left-color: var(--success); }
     .toast.error { border-left-color: var(--danger); }
     .toast.warning { border-left-color: #f59e0b; }
@@ -248,8 +112,9 @@
     .spinner-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); z-index: 9998; display: flex; justify-content: center; align-items: center; }
     .spinner { width: 48px; height: 48px; border: 4px solid rgba(0, 0, 0, 0.1); border-left-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
     [data-theme="dark"] .spinner { border: 4px solid rgba(255, 255, 255, 0.1); border-left-color: var(--primary); }
-
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    .queue-box { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(245, 158, 11, 0.1); border: 1px solid var(--warning); border-radius: var(--btn-radius); font-weight: 600; font-size: 0.95rem; }
   </style>
 </head>
 <body>
@@ -275,14 +140,18 @@
           <button class="btn btn-mode-p" id="btn-mode-pickup"><span class="material-icons">local_shipping</span> Pickup</button>
           <button class="btn btn-mode-r" id="btn-mode-return"><span class="material-icons">assignment_return</span> Return</button>
         </div>
-        
-        <div class="autosave-container">
-          <div class="autosave-label"><span class="material-icons" style="color:var(--primary)">flash_on</span> Auto-Save Mode</div>
-          <label class="switch">
-            <input type="checkbox" id="chk-autosave">
-            <span class="slider"></span>
-          </label>
+      </div>
+    </div>
+
+    <!-- Bulk Queue Panel -->
+    <div class="card hidden" id="bulk-queue-panel">
+      <div class="queue-box">
+        <div style="display:flex; align-items:center; gap:8px; color:var(--warning)">
+          <span class="material-icons">inventory_2</span> <span id="queue-count-text">0 Items in Bulk List</span>
         </div>
+        <button class="btn btn-warning" id="btn-bulk-save" style="width:auto; padding:10px 16px; font-size:0.85rem;">
+          <span class="material-icons">cloud_upload</span> Upload Bulk
+        </button>
       </div>
     </div>
 
@@ -320,8 +189,9 @@
           <tr><td>Time</td><td id="res-time">-</td></tr>
         </table>
         <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
-          <button class="btn btn-success" id="btn-save"><span class="material-icons">save</span>Save Entry</button>
-          <button class="btn btn-secondary" id="btn-close"><span class="material-icons">close</span>Close</button>
+          <button class="btn btn-success" id="btn-save"><span class="material-icons">save</span>Save Entry Now</button>
+          <button class="btn btn-warning" id="btn-add-queue"><span class="material-icons">add_shopping_cart</span>Add to Bulk List</button>
+          <button class="btn btn-secondary" id="btn-close"><span class="material-icons">close</span>Close / Scan Next</button>
         </div>
       </div>
     </div>
@@ -345,10 +215,17 @@
   <div class="toast-container" id="toast-container"></div>
 
   <script>
-    // CRITICAL: Yahan apna deployed Apps Script Web App URL daalein!
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyhoOZVUG_sDVR57FDlnwsanaFq3yH4BPZ_QOpLI3tozrcllcbf0m15TcEBw7-13FGL7Q/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzvLRaRNwGax1HyjUhhBQax7UBVEKekh0tr8PysAy3zTUOrltoC-nV7cOKKgw6ABrI2xw/exec";
 
-    const state = { currentMode: null, currentMethod: null, html5QrcodeScanner: null, scannedData: null, allLogs: [], filteredDate: null, autoSaveTimeout: null };
+    const state = { 
+      currentMode: null, 
+      currentMethod: null, 
+      html5QrcodeScanner: null, 
+      scannedData: null, 
+      allLogs: [], 
+      filteredDate: null,
+      bulkQueue: [] 
+    };
 
     const ui = {
       btnAllClose: document.getElementById('btn-all-close'), btnThemeToggle: document.getElementById('btn-theme-toggle'), themeIcon: document.getElementById('theme-icon'),
@@ -360,28 +237,26 @@
       toastContainer: document.getElementById('toast-container'), resAwb: document.getElementById('res-awb'), resOrderId: document.getElementById('res-order-id'),
       resStatus: document.getElementById('res-status'), resMode: document.getElementById('res-mode'), resDate: document.getElementById('res-date'), resTime: document.getElementById('res-time'),
       treeContainer: document.getElementById('tree-container'), dateFilter: document.getElementById('count-date-filter'), btnClearDate: document.getElementById('btn-clear-date'),
-      btnRefreshCounts: document.getElementById('btn-refresh-counts'), chkAutosave: document.getElementById('chk-autosave')
+      btnRefreshCounts: document.getElementById('btn-refresh-counts'),
+      bulkQueuePanel: document.getElementById('bulk-queue-panel'), queueCountText: document.getElementById('queue-count-text'), btnBulkSave: document.getElementById('btn-bulk-save'), btnAddQueue: document.getElementById('btn-add-queue')
     };
 
-    // Synthesized Audio Feedback System without external assets
     function playAudioTone(type) {
       try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
+        osc.connect(gain); gain.connect(ctx.destination);
         if (type === 'success') {
-          osc.frequency.setValueAtTime(880, ctx.currentTime); // High pitch chime
+          osc.frequency.setValueAtTime(880, ctx.currentTime);
           gain.gain.setValueAtTime(0.1, ctx.currentTime);
           osc.start(); osc.stop(ctx.currentTime + 0.15);
         } else {
-          osc.type = 'sawtooth';
-          osc.frequency.setValueAtTime(150, ctx.currentTime); // Low warning buzz
+          osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, ctx.currentTime);
           gain.gain.setValueAtTime(0.15, ctx.currentTime);
           osc.start(); osc.stop(ctx.currentTime + 0.35);
         }
-      } catch(e) { console.log("Audio feedback blocked context error", e); }
+      } catch(e) { console.log(e); }
     }
 
     function showToast(title, message, type = 'success') {
@@ -410,7 +285,7 @@
       } catch (error) {
         showSpinner(false);
         playAudioTone('error');
-        showToast('Network Error', 'Backend server failure link connection down', 'error');
+        showToast('Network Error', 'Server link down!', 'error');
         return { success: false, error: error.toString() };
       }
     }
@@ -507,39 +382,74 @@
       return div;
     }
 
+    function updateQueueUI() {
+      if (state.bulkQueue.length > 0) {
+        ui.bulkQueuePanel.classList.remove('hidden');
+        ui.queueCountText.textContent = `${state.bulkQueue.length} Items in Bulk List`;
+      } else {
+        ui.bulkQueuePanel.classList.add('hidden');
+      }
+    }
+
+    // Direct Instant Save 
     async function executeSaveOperation() {
       if (!state.scannedData) return;
-      if (state.autoSaveTimeout) clearTimeout(state.autoSaveTimeout);
       
       const response = await makeApiCall({ action: 'saveData', payload: state.scannedData });
       if (response && response.success) {
         playAudioTone('success');
-        showToast('Success', 'Record appended to log sheet perfectly.', 'success');
-        ui.awbInput.value = '';
-        ui.resultPanel.classList.add('hidden');
-        state.scannedData = null;
-        await loadCounts();
-        if (state.currentMethod === 'camera') await startCamera();
-        else ui.awbInput.focus();
+        showToast('Success', 'Logged perfectly into spreadsheet.', 'success');
+        
+        state.allLogs = response.logs || [];
+        renderTree();
+        clearAfterSave();
       } else if (response && response.duplicate) {
         playAudioTone('error');
-        showToast('Duplicate Found', `Already Saved\nDate: ${response.date}\nTime: ${response.time}`, 'warning');
-        if (state.currentMethod === 'camera') setTimeout(async () => { await startCamera(); }, 2000);
+        showToast('Duplicate Found', `Already Saved\nDate: ${response.date}`, 'warning');
+        if (state.currentMethod === 'camera') setTimeout(async () => { await startCamera(); }, 1500);
       } else {
         playAudioTone('error');
-        showToast('Save Failed', (response && response.error) || 'Unknown logging operation failure', 'error');
+        showToast('Save Failed', 'Operation error', 'error');
       }
+    }
+
+    // Execute Bulk Batch Save
+    async function executeBulkSave() {
+      if (state.bulkQueue.length === 0) return;
+      
+      const response = await makeApiCall({ action: 'saveDataBulk', payloads: state.bulkQueue });
+      if (response && response.success) {
+        playAudioTone('success');
+        showToast('Bulk Saved', `Added: ${response.addedCount} items. Skipped duplicates: ${response.skippedCount}`, 'success');
+        
+        state.allLogs = response.logs || [];
+        renderTree();
+        
+        state.bulkQueue = [];
+        updateQueueUI();
+      } else {
+        playAudioTone('error');
+        showToast('Bulk Save Error', response.error || 'Failed to submit batch request', 'error');
+      }
+    }
+
+    function clearAfterSave() {
+      ui.awbInput.value = '';
+      ui.resultPanel.classList.add('hidden');
+      state.scannedData = null;
+      if (state.currentMethod === 'camera') startCamera();
+      else ui.awbInput.focus();
     }
 
     async function handleAwbSubmission(awb) {
       if (!awb || awb.trim() === "") return;
-      if (state.autoSaveTimeout) clearTimeout(state.autoSaveTimeout);
       await stopCamera();
       
       const response = await makeApiCall({ action: 'fetchDelhivery', awb: awb.trim() });
       if (response && response.success) {
         const dateTime = getFormattedDateTime();
         state.scannedData = { awb: response.data.awb, orderId: response.data.orderId, status: response.data.status, mode: state.currentMode, date: dateTime.date, time: dateTime.time };
+        
         ui.resAwb.textContent = state.scannedData.awb;
         ui.resOrderId.textContent = state.scannedData.orderId;
         ui.resStatus.textContent = state.scannedData.status;
@@ -548,15 +458,9 @@
         ui.resTime.textContent = state.scannedData.time;
         ui.resultPanel.classList.remove('hidden');
         ui.resultPanel.scrollIntoView({ behavior: 'smooth' });
-
-        // Auto Save Execution Logic if switched on
-        if (ui.chkAutosave.checked) {
-          showToast('Auto Saving', 'Saving entry automatically in 1.5s...', 'success');
-          state.autoSaveTimeout = setTimeout(() => { executeSaveOperation(); }, 1500);
-        }
       } else {
         playAudioTone('error');
-        showToast('Fetch Failed', (response && response.error) || 'Invalid AWB or system error', 'error');
+        showToast('Fetch Failed', response.error || 'Invalid API Response', 'error');
         if (state.currentMethod === 'camera') startCamera();
       }
     }
@@ -566,8 +470,8 @@
       ui.inputPanel.classList.remove('hidden');
       state.html5QrcodeScanner = new Html5Qrcode("qr-reader");
       try {
-        await state.html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 15, qrbox: { width: 250, height: 250 } }, (decodedText) => { ui.awbInput.value = decodedText; handleAwbSubmission(decodedText); }, () => {});
-      } catch (err) { showToast('Camera Error', 'Could not access back camera hardware context initialization failed', 'error'); }
+        await state.html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 20, qrbox: { width: 250, height: 250 } }, (decodedText) => { ui.awbInput.value = decodedText; handleAwbSubmission(decodedText); }, () => {});
+      } catch (err) { showToast('Camera Error', 'Hardware setup failed.', 'error'); }
     }
 
     async function stopCamera() {
@@ -580,7 +484,6 @@
     function resetModeButtons() { ui.btnModePickup.classList.remove('active'); ui.btnModeReturn.classList.remove('active'); }
 
     async function closeAllPanels() {
-      if (state.autoSaveTimeout) clearTimeout(state.autoSaveTimeout);
       await stopCamera();
       ui.resultPanel.classList.add('hidden'); ui.inputPanel.classList.add('hidden'); ui.manualContainer.classList.add('hidden'); ui.actionSelectionPanel.classList.add('hidden'); ui.modePanel.classList.remove('open');
       ui.awbInput.value = ''; state.currentMode = null; state.currentMethod = null; state.scannedData = null; resetModeButtons();
@@ -605,9 +508,19 @@
 
       ui.awbInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleAwbSubmission(ui.awbInput.value); });
       ui.btnSave.addEventListener('click', executeSaveOperation);
+      
+      // Cache Locally inside Queue Array
+      ui.btnAddQueue.addEventListener('click', () => {
+        if (!state.scannedData) return;
+        state.bulkQueue.push(state.scannedData);
+        showToast('Added to Bulk List', `${state.scannedData.awb} added locally.`, 'warning');
+        updateQueueUI();
+        clearAfterSave();
+      });
+
+      ui.btnBulkSave.addEventListener('click', executeBulkSave);
 
       ui.btnClose.addEventListener('click', async () => {
-        if (state.autoSaveTimeout) clearTimeout(state.autoSaveTimeout);
         ui.resultPanel.classList.add('hidden'); state.scannedData = null;
         if (state.currentMethod === 'camera') await startCamera(); else { ui.awbInput.value = ''; ui.awbInput.focus(); }
       });
