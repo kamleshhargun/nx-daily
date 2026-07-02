@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delhivery Tracking & Data Scanner</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800">
+
+    <div class="min-h-screen flex flex-col">
+        <header class="bg-indigo-600 text-white shadow-md p-4">
+            <div class="container mx-auto flex justify-between items-center">
+                <h1 class="text-xl font-bold tracking-wider">📦 Logistics Dashboard</h1>
+                <div id="connectionStatus" class="text-xs bg-indigo-700 px-3 py-1 rounded-full text-indigo-200">
+                    System Active
+                </div>
+            </div>
+        </header>
+
+        <nav class="bg-white border-b border-gray-200 shadow-sm">
+            <div class="container mx-auto flex space-x-4 p-2">
+                <button onclick="switchTab('singleScan')" id="btn-singleScan" class="tab-btn px-4 py-2 font-medium text-sm rounded-md bg-indigo-100 text-indigo-700">Single Entry</button>
+                <button onclick="switchTab('bulkScan')" id="btn-bulkScan" class="tab-btn px-4 py-2 font-medium text-sm rounded-md text-gray-600 hover:text-gray-900">Bulk Upload</button>
+                <button onclick="switchTab('bulkSync')" id="btn-bulkSync" class="tab-btn px-4 py-2 font-medium text-sm rounded-md text-gray-600 hover:text-gray-900">Delhivery Engine Sync</button>
+                <button onclick="switchTab('analytics')" id="btn-analytics" class="tab-btn px-4 py-2 font-medium text-sm rounded-md text-gray-600 hover:text-gray-900" onclick="loadCounts()">Logs & Summary</button>
+            </div>
+        </nav>
+
+        <main class="flex-grow container mx-auto p-4 max-w-4xl">
+            
+            <div id="toast" class="hidden mb-4 p-4 rounded-md text-sm font-medium shadow-sm transition-all"></div>
+
+            <section id="singleScan" class="tab-content active bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                <h2 class="text-lg font-semibold mb-4 text-gray-700">Scan Single AWB</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">AWB Number</label>
+                        <input type="text" id="singleAwb" class="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Enter Waybill / AWB">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Mode</label>
+                            <select id="singleMode" class="w-full p-2.5 border border-gray-300 rounded-md bg-white">
+                                <option value="Pickup">Pickup</option>
+                                <option value="Return">Return</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Order ID (Optional)</label>
+                            <input type="text" id="singleOrderId" class="w-full p-2.5 border border-gray-300 rounded-md" placeholder="Ref No">
+                        </div>
+                    </div>
+                    <button onclick="handleSingleSave()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-4 rounded-md shadow transition">
+                        Verify & Save Entry
+                    </button>
+                </div>
+            </section>
+
+            <section id="bulkScan" class="tab-content bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                <h2 class="text-lg font-semibold mb-2 text-gray-700">Bulk CSV / Text Entry</h2>
+                <p class="text-xs text-gray-500 mb-4">Paste comma-separated or line-separated AWBs here.</p>
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Select Mode</label>
+                            <select id="bulkMode" class="w-full p-2.5 border border-gray-300 rounded-md bg-white">
+                                <option value="Pickup">Pickup</option>
+                                <option value="Return">Return</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">AWB List</label>
+                        <textarea id="bulkAwbs" rows="6" class="w-full p-2.5 border border-gray-300 rounded-md font-mono text-sm" placeholder="Paste AWBs here&#10;Example:&#10;1234567890&#10;9876543210"></textarea>
+                    </div>
+                    <button onclick="handleBulkSave()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-4 rounded-md shadow transition">
+                        Process Bulk Append
+                    </button>
+                </div>
+            </section>
+
+            <section id="bulkSync" class="tab-content bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                <h2 class="text-lg font-semibold mb-2 text-gray-700">Delhivery API Engine (Column G-R Sync)</h2>
+                <p class="text-xs text-gray-500 mb-4">This runs the background API tracking update on your Sheet for a specific date.</p>
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Target Date</label>
+                            <input type="date" id="syncDate" class="w-full p-2.5 border border-gray-300 rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Target Mode</label>
+                            <select id="syncMode" class="w-full p-2.5 border border-gray-300 rounded-md bg-white">
+                                <option value="Pickup">Pickup</option>
+                                <option value="Return">Return</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button onclick="handleBulkEngineSync()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 px-4 rounded-md shadow transition">
+                        Trigger Full Delhivery Sync Engine
+                    </button>
+                </div>
+            </section>
+
+            <section id="analytics" class="tab-content bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold text-gray-700">Realtime Scan Statistics</h2>
+                    <button onclick="loadCounts()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-1 px-3 rounded border border-gray-300">Refresh Data</button>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="bg-indigo-50 p-4 rounded-md border border-indigo-100">
+                        <div class="text-xs text-indigo-600 uppercase font-bold tracking-wider">Total Pickups</div>
+                        <div id="pickupCount" class="text-2xl font-black text-indigo-900 mt-1">0</div>
+                    </div>
+                    <div class="bg-rose-50 p-4 rounded-md border border-rose-100">
+                        <div class="text-xs text-rose-600 uppercase font-bold tracking-wider">Total Returns</div>
+                        <div id="returnCount" class="text-2xl font-black text-rose-900 mt-1">0</div>
+                    </div>
+                </div>
+                
+                <h3 class="text-xs font-bold uppercase text-gray-500 tracking-wider mb-2">Recent Scanned Activity Logs</h3>
+                <div class="border border-gray-200 rounded-md max-h-60 overflow-y-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-gray-50 text-xs text-gray-600 uppercase sticky top-0 border-b border-gray-200">
+                            <tr>
+                                <th class="p-2.5">Mode</th>
+                                <th class="p-2.5">Date Added</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logTableBody" class="divide-y divide-gray-100 text-gray-600">
+                            <tr>
+                                <td colspan="2" class="p-4 text-center text-xs text-gray-400">No logs loaded. Click Refresh.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+
+        <footer class="bg-gray-100 border-t border-gray-200 text-center py-3 text-xs text-gray-500">
+            Connected via Google Apps Script Integration Backend
+        </footer>
+    </div>
+
+    <script>
+        // ⚡ PASTE YOUR GOOGLE WEB APP EXEC URL HERE ⚡
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxa3BDJfZjvrkVUg6u01IumQgAbZMqm4hdm7rlvwA8Nd0-z6aHNe0pteuVUjQO1yeKjkg/exec";
+
+        // Tab Switcher
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('bg-indigo-100', 'text-indigo-700');
+                el.classList.add('text-gray-600', 'hover:text-gray-900');
+            });
+            
+            document.getElementById(tabId).classList.add('active');
+            const activeBtn = document.getElementById(`btn-${tabId}`);
+            activeBtn.classList.remove('text-gray-600', 'hover:text-gray-900');
+            activeBtn.classList.add('bg-indigo-100', 'text-indigo-700');
+
+            if(tabId === 'analytics') {
+                loadCounts();
+            }
+        }
+
+        // Show Status Toast
+        function showToast(message, isSuccess = true) {
+            const toast = document.getElementById('toast');
+            toast.innerText = message;
+            toast.className = `p-4 rounded-md text-sm font-semibold shadow-sm mb-4 block ${isSuccess ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'}`;
+            setTimeout(() => { toast.className = "hidden"; }, 5000);
+        }
+
+        // Get Current System Date and Time
+        function getDateTime() {
+            const now = new Date();
+            const date = now.toISOString().split('T')[0]; // YYYY-MM-DD
+            const time = now.toTimeString().split(' ')[0]; // HH:MM:SS
+            return { date, time };
+        }
+
+        // 1. Handle Single Entry
+        async function handleSingleSave() {
+            const awb = document.getElementById('singleAwb').value.trim();
+            const mode = document.getElementById('singleMode').value;
+            let orderId = document.getElementById('singleOrderId').value.trim();
+
+            if (!awb) return alert('Please enter an AWB number');
+
+            // Fetch live Delhivery tracking first to auto-resolve OrderID/Status if available
+            showToast('Fetching Delhivery tracking state & validating duplicate...', true);
+            
+            try {
+                // Fetch Delhivery Status
+                let liveStatus = "Pending Verification";
+                const delhiveryRes = await makePostRequest({ action: "fetchDelhivery", awb: awb });
+                
+                if (delhiveryRes.success) {
+                    liveStatus = delhiveryRes.data.status;
+                    if (!orderId || orderId === "N/A") orderId = delhiveryRes.data.orderId;
+                }
+
+                const timeMeta = getDateTime();
+                const payload = {
+                    awb: awb,
+                    orderId: orderId || "N/A",
+                    status: liveStatus,
+                    mode: mode,
+                    date: timeMeta.date,
+                    time: timeMeta.time
+                };
+
+                const saveRes = await makePostRequest({ action: "saveData", payload: payload });
+                
+                if (saveRes.success) {
+                    showToast(`Successfully Saved AWB ${awb}!`);
+                    document.getElementById('singleAwb').value = "";
+                    document.getElementById('singleOrderId').value = "";
+                    renderLogs(saveRes.logs);
+                } else if (saveRes.duplicate) {
+                    showToast(`🛑 DUPLICATE DETECTED: This AWB already exists for [${mode}] scanned on ${saveRes.date} at ${saveRes.time}`, false);
+                } else {
+                    showToast(`Error: ${saveRes.error}`, false);
+                }
+            } catch (err) {
+                showToast(`System Error: ${err.toString()}`, false);
+            }
+        }
+
+        // 2. Handle Bulk Entry Upload
+        async function handleBulkSave() {
+            const mode = document.getElementById('bulkMode').value;
+            const textData = document.getElementById('bulkAwbs').value.trim();
+
+            if (!textData) return alert('Please paste some AWB data first');
+
+            const lines = textData.split(/[\n,]+/);
+            const payloads = [];
+            const timeMeta = getDateTime();
+
+            lines.forEach(line => {
+                const cleanAwb = line.trim();
+                if (cleanAwb) {
+                    payloads.push({
+                        awb: cleanAwb,
+                        orderId: "Bulk Load",
+                        status: "Pending API Update",
+                        mode: mode,
+                        date: timeMeta.date,
+                        time: timeMeta.time
+                    });
+                }
+            });
+
+            if (payloads.length === 0) return alert('No valid AWBs detected');
+
+            showToast(`Processing bulk insert for ${payloads.length} entries...`);
+
+            try {
+                const res = await makePostRequest({ action: "saveDataBulk", payloads: payloads });
+                if (res.success) {
+                    showToast(`Bulk Run Done! Added: ${res.addedCount} rows, Skipped (Duplicates): ${res.skippedCount}`);
+                    document.getElementById('bulkAwbs').value = "";
+                    renderLogs(res.logs);
+                } else {
+                    showToast(`Error: ${res.error}`, false);
+                }
+            } catch (err) {
+                showToast(`System Error: ${err.toString()}`, false);
+            }
+        }
+
+        // 3. Trigger Full Day Inline Mapping Sync (Col G-R)
+        async function handleBulkEngineSync() {
+            const date = document.getElementById('syncDate').value;
+            const mode = document.getElementById('syncMode').value;
+
+            if (!date) return alert('Please choose a valid date target');
+
+            showToast('⚠️ Connecting to Delhivery API Engine. This might take some time as it runs throttle-safe operations...', true);
+
+            try {
+                const res = await makePostRequest({ action: "fetchBulkDayData", date: date, mode: mode });
+                if (res.success) {
+                    showToast(`🚀 Success! Delhivery Engine updated ${res.updatedCount} records into Sheets Columns G to R directly.`);
+                } else {
+                    showToast(`Engine stopped: ${res.error}`, false);
+                }
+            } catch (err) {
+                showToast(`System Error: ${err.toString()}`, false);
+            }
+        }
+
+        // 4. Load & Update Statistics Counts
+        async function loadCounts() {
+            try {
+                const res = await makePostRequest({ action: "getCounts" });
+                if (res.success && res.logs) {
+                    renderLogs(res.logs);
+                }
+            } catch (err) {
+                console.error("Stats fetching error", err);
+            }
+        }
+
+        function renderLogs(logs) {
+            if(!logs || !Array.isArray(logs)) return;
+            
+            let pickup = 0;
+            let returns = 0;
+            let html = "";
+
+            logs.reverse().forEach((log, index) => {
+                if (log.mode === "Pickup") pickup++;
+                if (log.mode === "Return") returns++;
+
+                // render only top 30 logs inside real UI list for smooth rendering
+                if (index < 30) {
+                    html += `<tr>
+                        <td class="p-2.5"><span class="px-2 py-0.5 rounded text-xs font-semibold ${log.mode === 'Pickup' ? 'bg-indigo-100 text-indigo-800':'bg-rose-100 text-rose-800'}">${log.mode}</span></td>
+                        <td class="p-2.5 font-mono text-xs">${log.date}</td>
+                    </tr>`;
+                }
+            });
+
+            document.getElementById('pickupCount').innerText = pickup;
+            document.getElementById('returnCount').innerText = returns;
+            if(html) document.getElementById('logTableBody').innerHTML = html;
+        }
+
+        // Base fetch client logic for Web App
+        async function makePostRequest(body) {
+            if (WEB_APP_URL.includes("हाँ_अपना_")) {
+                alert("🔴 Please replace the 'WEB_APP_URL' variable at the bottom of the script with your deployment URL!");
+                throw new Error("Missing Apps Script URL configuration");
+            }
+            
+            // Apps script requires POST request to be text base string content
+            const response = await fetch(WEB_APP_URL, {
+                method: "POST",
+                mode: "cors",
+                headers: {
+                    "Content-Type": "text/plain;charset=utf-8"
+                },
+                body: JSON.stringify(body)
+            });
+            return await response.json();
+        }
+
+        // Auto initialization
+        window.onload = () => {
+            // Setup default inputs
+            document.getElementById('syncDate').value = getDateTime().date;
+        };
+    </script>
+</body>
+</html>
