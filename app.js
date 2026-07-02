@@ -36,22 +36,25 @@ async function callBackend(actionName, payloadData = {}) {
   }
   
   try {
-  let bodyData = { action: actionName, ...payloadData };
-  let response = await fetch(GOOGLE_API_URL, {
-    method: "POST",
-    mode: "no-cors", // Google App Script ke liye sabse safe mode
-    headers: { 
-      "Content-Type": "application/x-www-form-urlencoded" 
-    },
-    body: JSON.stringify(bodyData)
-  });
-  
-  // No-cors mode me browser text ya JSON direct read nahi karne deta, 
-  // isliye hum testing bypass ke liye dummy success object return kar rahe hain.
-  return { success: true, message: "Request sent successfully" };
-} catch (err) {
-  console.error("Backend Connection Error:", err);
-  return { success: false, error: err.message };
+    let bodyData = { action: actionName, ...payloadData };
+    
+    // Send data to Google Apps Script via safe no-cors stream
+    await fetch(GOOGLE_API_URL, {
+      method: "POST",
+      mode: "no-cors", 
+      headers: { 
+        "Content-Type": "application/x-www-form-urlencoded" 
+      },
+      body: JSON.stringify(bodyData)
+    });
+    
+    // Since no-cors hides response, we return local success block for UI
+    return { success: true, message: "Request sent successfully" };
+    
+  } catch (err) {
+    console.error("Backend Connection Error:", err);
+    return { success: false, error: err.message };
+  }
 }
 
 // 4. DASHBOARD PAGE LOGIC
