@@ -1,5 +1,5 @@
 // app.js
-const GOOGLE_API_URL = "https://script.google.com/macros/s/AKfycbxqTVx3UjM1w4lrZQYBf1YVqpZWuE7h8xTWmG2psVECfR9PA-8ZJBmcFf5AMRnB24xCKQ/exec";
+const GOOGLE_API_URL = "https://script.google.com/macros/s/AKfycbxD7G40d_5S0SK8ET4zhm_m-VJ_4OpLo57BNobuPFOirVSCvfG_MRyqYFKNMOc1VcP9/exec";
 
 // 1. SYSTEM INIT & SIDEBAR HIGHLIGHTER
 document.addEventListener("DOMContentLoaded", function () {
