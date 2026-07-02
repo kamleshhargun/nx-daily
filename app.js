@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // 2. BACKEND API CALL ENGINE
 async function callBackend(actionName, payloadData = {}) {
-  if (GOOGLE_API_URL === "https://script.google.com/macros/s/AKfycbxqTVx3UjM1w4lrZQYBf1YVqpZWuE7h8xTWmG2psVECfR9PA-8ZJBmcFf5AMRnB24xCKQ/exec") {
+  if (GOOGLE_API_URL === "YOUR_DEPLOYED_WEB_APP_URL_HERE") {
     alert("Error: Please update GOOGLE_API_URL in app.js with your script deployment link.");
     return { success: false, error: "URL not configured" };
   }
