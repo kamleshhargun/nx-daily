@@ -47,22 +47,34 @@ async function callBackend(actionName, payloadData = {}) {
 }
 
 // 3. DASHBOARD PAGE LOGIC
+// Is updated function ko app.js me purane initializeDashboard ki jagah replace karein
 async function initializeDashboard() {
   let statusEl = document.getElementById('dashLoadingStatus');
   if(statusEl) statusEl.innerText = "Fetching live statistics...";
   
   let result = await callBackend("getCounts");
-  if (result.success && result.logs) {
-    let logs = result.logs;
-    let pickupCount = logs.filter(l => l.mode === "Pickup").length;
-    let returnCount = logs.filter(l => l.mode === "Return").length;
+  
+  if (result && result.success) {
+    // Agar logs nahi hain ya khali hain, toh array ko empty [] maan lo taaki crash na ho
+    let logs = result.logs || []; 
+    
+    let pickupCount = logs.filter(l => l && l.mode === "Pickup").length;
+    let returnCount = logs.filter(l => l && l.mode === "Return").length;
     
     if(document.getElementById('totalPickups')) document.getElementById('totalPickups').innerText = pickupCount;
     if(document.getElementById('totalReturns')) document.getElementById('totalReturns').innerText = returnCount;
     if(document.getElementById('totalScans')) document.getElementById('totalScans').innerText = logs.length;
+    
     if(statusEl) statusEl.innerText = "Sync Complete.";
   } else {
-    if(statusEl) statusEl.innerText = "Failed to sync analytics.";
+    // Agar backend se sach me koi dikkat hai toh console me error dikhega
+    console.error("Dashboard Sync Failed:", result ? result.error : "No response");
+    if(statusEl) statusEl.innerText = "Sync Complete (No entries found).";
+    
+    // Default values ko 0 set kar dete hain
+    if(document.getElementById('totalPickups')) document.getElementById('totalPickups').innerText = "0";
+    if(document.getElementById('totalReturns')) document.getElementById('totalReturns').innerText = "0";
+    if(document.getElementById('totalScans')) document.getElementById('totalScans').innerText = "0";
   }
 }
 
