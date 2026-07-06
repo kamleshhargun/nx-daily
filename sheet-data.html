@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Harsidhi Ventures - Master Sheet Data Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Inter, sans-serif }
+        body { background: #f3f6fb; min-height: 100vh; color: #1f2937; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+        
+        /* Top Action Bar */
+        .header-panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,.02); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .title h2 { font-size: 20px; color: #1e3a8a; font-weight: 700; }
+        .title p { font-size: 13px; color: #64748b; margin-top: 2px; }
+        
+        .action-cluster { display: flex; gap: 10px; align-items: center; }
+        
+        /* Buttons & Badges */
+        .btn { border: none; border-radius: 10px; padding: 10px 16px; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+        .btn:hover { transform: translateY(-1px); opacity: 0.95; }
+        .btn:disabled { background: #cbd5e1 !important; color: #94a3b8 !important; cursor: not-allowed; transform: none; }
+        .btn-primary { background: #2563eb; color: #fff; }
+        .btn-success { background: #10b981; color: #fff; }
+        .btn-secondary { background: #475569; color: #fff; }
+        
+        /* Automation Live Progress Logger */
+        .progress-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 16px; font-size: 13px; width: 100%; display: none; flex-direction: column; gap: 6px; }
+        .progress-bar-container { background: #e2e8f0; border-radius: 6px; height: 8px; width: 100%; overflow: hidden; }
+        .progress-bar-fill { background: #10b981; height: 100%; width: 0%; transition: width 0.3s; }
+
+        /* Modern Table View */
+        .table-panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,.02); }
+        .table-wrapper { overflow-x: auto; max-height: 550px; overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+        th { background: #f8fafc; color: #475569; font-weight: 600; padding: 14px 16px; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 10; }
+        td { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; }
+        tr:hover { background: #f8fafc; }
+        
+        /* Badges */
+        .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .badge-pickup { background: #dbeafe; color: #1e40af; }
+        .badge-return { background: #ccfbf1; color: #115e59; }
+        
+        /* Pagination Controls */
+        .pagination-panel { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: #fafbfc; border-top: 1px solid #e2e8f0; font-size: 13px; font-weight: 500; color: #475569; }
+        
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #111827; color: #fff; padding: 12px 16px; border-radius: 12px; z-index: 9999; box-shadow: 0 8px 20px rgba(0, 0, 0, .2); font-size: 13px; }
+        #loadingOverlay { display: none; position: fixed; inset: 0; background: rgba(255, 255, 255, .85); backdrop-filter: blur(4px); z-index: 99999; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: #2563eb }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <!-- Action Header -->
+        <div class="header-panel">
+            <div class="title">
+                <h2>📋 Google Sheet Master Data Grid</h2>
+                <p>Total Records on System: <span id="totalRowCountText" style="font-weight:700; color:#2563eb;">0</span> (Loaded dynamically in 100-row chunks)</p>
+            </div>
+            <div class="action-cluster">
+                <button id="btnPageUpdate" class="btn btn-secondary" onclick="updateCurrentPageRows()">⚡ Update Page Rows</button>
+                <button id="btnFullUpdate" class="btn btn-success" onclick="startAutomatedFullBatch()">🚀 Automated Non-Stop Sync</button>
+            </div>
+            
+            <!-- Live Progress Bar Module -->
+            <div id="progressModule" class="progress-box">
+                <div style="display:flex; justify-content:space-between; font-weight:600;">
+                    <span id="progressStatusText">Running automated updates...</span>
+                    <span id="progressPercentText">0%</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div id="progressBar" class="progress-bar-fill"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Master Table Component -->
+        <div class="table-panel">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Row No.</th>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>AWB Number</th>
+                            <th>Order ID</th>
+                            <th>Courier</th>
+                            <th>Current Status</th>
+                            <th style="text-align: center;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sheetDataTableBody">
+                        <tr>
+                            <td colspan="8" style="text-align: center; color: gray; padding: 30px; font-style: italic;">Loading sheet components from data grid nodes...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination Interface Footer -->
+            <div class="pagination-panel">
+                <div>Showing Page <span id="currentPageText" style="font-weight:700;">1</span> of <span id="totalPagesText" style="font-weight:700;">1</span></div>
+                <div class="action-cluster">
+                    <button id="btnPrevPage" class="btn btn-secondary" style="padding: 6px 12px;" onclick="changePage(-1)">◀ Prev</button>
+                    <button id="btnNextPage" class="btn btn-secondary" style="padding: 6px 12px;" onclick="changePage(1)">Next ▶</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Processing Overlay Modal -->
+    <div id="loadingOverlay">Connecting Grid Database...</div>
+
+    <script>
+        /* ===================================
+        CONFIG
+        =================================== */
+        const API_URL = "https://script.google.com/macros/s/AKfycbyBR10FMSEz7trq0JUkEZwKRv64AlIX0D5ZZn4LXe7zvMsU1rr66CN8RZ6AbSE_2x8o/exec"; 
+
+        /* ===================================
+        GLOBAL MANAGEMENT ENGINE STATE
+        =================================== */
+        let currentPage = 1;
+        const rowLimitPerPage = 100; // Optimal performance rendering chunks
+        let totalPages = 1;
+        let isLoopRunning = false;
+        let localPageRowsCache = [];
+
+        /* ===================================
+        FETCH PAGINATED RECORDS
+        =================================== */
+        async function loadGridData() {
+            showLoader();
+            try {
+                // Hitting backend -> getPaginatedRecords(page, limit)
+                const url = `${API_URL}?action=getPaginatedRecords&page=${currentPage}&limit=${rowLimitPerPage}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                hideLoader();
+
+                if (data.success) {
+                    localPageRowsCache = data.rows || [];
+                    totalPages = data.totalPages || 1;
+                    
+                    document.getElementById("totalRowCountText").innerText = data.totalRows || 0;
+                    document.getElementById("currentPageText").innerText = data.currentPage || 1;
+                    document.getElementById("totalPagesText").innerText = totalPages;
+                    
+                    renderTableRows(localPageRowsCache);
+                    togglePaginationButtons();
+                } else {
+                    toast("Database grid parsing error.");
+                }
+            } catch (err) {
+                hideLoader();
+                console.error(err);
+                toast("Failed to download requested chunk.");
+            }
+        }
+
+        /* ===================================
+        RENDER ENGINE LAYOUT ROW GENERATOR
+        =================================== */
+        function renderTableRows(rows) {
+            const tbody = document.getElementById("sheetDataTableBody");
+            if (rows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:gray;">No active records tracked on this segment index.</td></tr>`;
+                return;
+            }
+
+            let html = "";
+            rows.forEach((r, idx) => {
+                const badgeClass = r.type === "Pickup" ? "badge-pickup" : "badge-return";
+                html += `
+                    <tr id="row-element-${r.row}">
+                        <td><b>#${r.row}</b></td>
+                        <td>${r.date || "N/A"}</td>
+                        <td><span class="badge ${badgeClass}">${r.type}</span></td>
+                        <td><code>${r.awb}</code></td>
+                        <td>${r.orderId || "N/A"}</td>
+                        <td>${r.courier || "MANUAL"}</td>
+                        <td id="status-cell-${r.row}" style="font-weight:600; color:#2563eb;">${r.status || "Pending"}</td>
+                        <td style="text-align: center;">
+                            <button id="btn-sync-single-${r.row}" class="btn btn-primary" style="padding: 5px 10px; font-size:11px; border-radius:6px;" onclick="syncSingleRowInline('${r.row}', '${r.awb}')">Sync</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        /* ===================================
+        INLINE ROW SYNC OPERATION
+        =================================== */
+        async function syncSingleRowInline(rowId, awb) {
+            const statusCell = document.getElementById(`status-cell-${rowId}`);
+            const btn = document.getElementById(`btn-sync-single-${rowId}`);
+            
+            if(statusCell) statusCell.innerHTML = "<i>Syncing...</i>";
+            if(btn) btn.disabled = true;
+
+            try {
+                // Calls code.gs updateSingleAWB endpoint
+                const res = await fetch(`${API_URL}?action=updateSingleAWB&awb=${encodeURIComponent(awb)}`);
+                const data = await res.json();
+
+                if (data.success) {
+                    if (data.skipped) {
+                        if(statusCell) statusCell.innerHTML = `<span style="color:#64748b;">Locked (${data.reason})</span>`;
+                        toast(`Row #${rowId} skipped (Locked)`);
+                    } else {
+                        if(statusCell) statusCell.innerHTML = `<span style="color:#10b981;">Updated Live</span>`;
+                        toast(`Row #${rowId} successfully synced!`);
+                    }
+                } else {
+                    if(statusCell) statusCell.innerHTML = `<span style="color:#dc2626;">API Error</span>`;
+                }
+            } catch (e) {
+                if(statusCell) statusCell.innerHTML = `<span style="color:#dc2626;">Network Error</span>`;
+            } finally {
+                if(btn && !isLoopRunning) btn.disabled = false;
+            }
+        }
+
+        /* ===================================
+        BATCH RUNNER: UPDATE ALL ROWS ON CURRENT PAGE
+        =================================== */
+        async function updateCurrentPageRows() {
+            if (isLoopRunning) return;
+            if (localPageRowsCache.length === 0) return;
+
+            isLoopRunning = true;
+            toggleGlobalControls(true);
+            showProgressModule(true);
+
+            const totalItems = localPageRowsCache.length;
+            
+            for (let i = 0; i < totalItems; i++) {
+                const record = localPageRowsCache[i];
+                updateProgressBarText(`Processing item ${i+1} of ${totalItems}...`, Math.round(((i + 1) / totalItems) * 100));
+                
+                // Fire sequential asynchronous function wrapper
+                await syncSingleRowInline(record.row, record.awb);
+            }
+
+            updateProgressBarText("✨ Current page block update complete!", 100);
+            isLoopRunning = false;
+            toggleGlobalControls(false);
+            setTimeout(() => showProgressModule(false), 4000);
+        }
+
+        /* ===================================
+        NON-STOP AUTOMATED AUTOMATION LOOP (AUTOMATED CHUNK SYNC)
+        =================================== */
+        async function startAutomatedFullBatch() {
+            if (isLoopRunning) return;
+            
+            const confirmation = confirm("Yeh mode automatic ek ke baad ek saari pages ko pull karke loop chalayega jab tak sab sync na ho jaye. Kya aap ise run karna chahte hain?");
+            if (!confirmation) return;
+
+            isLoopRunning = true;
+            toggleGlobalControls(true);
+            showProgressModule(true);
+
+            // Start updating sequentially from page index current running down to page 1
+            while (currentPage <= totalPages && currentPage > 0) {
+                updateProgressBarText(`Loading Batch Segments from Page Block ${currentPage}...`, 0);
+                
+                // 1. Fetch current chunk index array line items
+                const url = `${API_URL}?action=getPaginatedRecords&page=${currentPage}&limit=${rowLimitPerPage}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (!data.success || !data.rows || data.rows.length === 0) {
+                    break;
+                }
+
+                localPageRowsCache = data.rows;
+                renderTableRows(localPageRowsCache);
+                
+                const totalItems = localPageRowsCache.length;
+                
+                // 2. Loop through all fetched elements inside current active batch block
+                for (let i = 0; i < totalItems; i++) {
+                    const record = localPageRowsCache[i];
+                    const globalProgressPercent = Math.round(((i + 1) / totalItems) * 100);
+                    updateProgressBarText(`Page ${currentPage} Layer Cluster: Executing ${i+1}/${totalItems}...`, globalProgressPercent);
+                    
+                    await syncSingleRowInline(record.row, record.awb);
+                }
+
+                // If it reaches past total endpoints break loop execution blocks
+                if (currentPage >= totalPages) {
+                    break;
+                }
+                
+                // Advance page segment index block marker forward
+                currentPage++;
+                document.getElementById("currentPageText").innerText = currentPage;
+            }
+
+            updateProgressBarText("🎉 Full Server Database Automated Loop sync finished safely!", 100);
+            isLoopRunning = false;
+            toggleGlobalControls(false);
+            loadGridData(); // Final native layout verification reload
+        }
+
+        /* ===================================
+        PAGINATION NAVIGATION MANAGER
+        =================================== */
+        function changePage(direction) {
+            if (isLoopRunning) return;
+            const targetPage = currentPage + direction;
+            if (targetPage > 0 && targetPage <= totalPages) {
+                currentPage = targetPage;
+                loadGridData();
+            }
+        }
+
+        function togglePaginationButtons() {
+            document.getElementById("btnPrevPage").disabled = (currentPage === 1);
+            document.getElementById("btnNextPage").disabled = (currentPage === totalPages);
+        }
+
+        /* ===================================
+        INTERFACE UTILITY CONTROLLERS
+        =================================== */
+        function toggleGlobalControls(disableState) {
+            document.getElementById("btnPageUpdate").disabled = disableState;
+            document.getElementById("btnFullUpdate").disabled = disableState;
+            document.getElementById("btnPrevPage").disabled = disableState;
+            document.getElementById("btnNextPage").disabled = disableState;
+        }
+
+        function showProgressModule(show) {
+            document.getElementById("progressModule").style.display = show ? "flex" : "none";
+        }
+
+        function updateProgressBarText(text, percent) {
+            document.getElementById("progressStatusText").innerText = text;
+            document.getElementById("progressPercentText").innerText = `${percent}%`;
+            document.getElementById("progressBar").style.width = `${percent}%`;
+        }
+
+        function showLoader() { document.getElementById("loadingOverlay").style.display = "flex"; }
+        function hideLoader() { document.getElementById("loadingOverlay").style.display = "none"; }
+        function toast(msg) {
+            const t = document.createElement("div"); t.className = "toast"; t.innerText = msg;
+            document.body.appendChild(t); setTimeout(() => t.remove(), 2500);
+        }
+
+        window.onload = function() {
+            if (API_URL !== "YOUR_SPREADSHEET_WEB_APP_URL_HERE") {
+                loadGridData();
+            } else {
+                alert("Please declare your valid Google Apps Script system API_URL token string inside Script line 85.");
+            }
+        };
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Harsidhi Ventures - Live Analytics Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Inter, sans-serif }
+        body { background: #f3f6fb; min-height: 100vh; color: #1f2937; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+        
+        .dashboard-header { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 16px 24px; border-radius: 16px; border: 1px solid #e5e7eb; box-shadow: 0 4px 12px rgba(0,0,0,.02); }
+        .dashboard-header h2 { font-size: 20px; color: #1e3a8a; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .refresh-badge { background: #e0f2fe; color: #0369a1; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; border: none; }
+        .refresh-badge:hover { background: #0369a1; color: #fff; }
+
+        .section-title { font-size: 15px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; border-left: 4px solid #2563eb; padding-left: 10px; margin-bottom: 5px; }
+        
+        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+        .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,.02); transition: 0.2s; position: relative; overflow: hidden; }
+        .card h3 { font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; }
+        .card .big { font-size: 28px; font-weight: 700; color: #0f172a; margin-top: 8px; }
+        
+        .card-p-today { border-left: 5px solid #2563eb; }
+        .card-r-today { border-left: 5px solid #14b8a6; }
+        .card-p-yesterday { border-left: 5px solid #3b82f6; opacity: 0.9; }
+        .card-r-yesterday { border-left: 5px solid #06b6d4; opacity: 0.9; }
+        .card-p-total { border-left: 5px solid #1e3a8a; }
+        .card-r-total { border-left: 5px solid #0f766e; }
+        
+        .nav-card { cursor: pointer; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border: 1px solid #e5e7eb; font-weight: 600; font-size: 15px; text-align: center; color: #1e293b; display: flex; align-items: center; justify-content: center; height: 70px; border-radius: 14px; box-shadow: 0 2px 6px rgba(0,0,0,.02); }
+        .nav-card:hover { transform: translateY(-2px); border-color: #2563eb; color: #2563eb; box-shadow: 0 6px 15px rgba(37,99,235,0.08); }
+
+        .stat { display: flex; gap: 16px; background: #fff; padding: 14px 20px; border-radius: 14px; border: 1px solid #e5e7eb; font-size: 14px; font-weight: 600; color: #475569; }
+        .stat span { font-weight: 700; margin-left: 4px; }
+        #saved_count { color: #10b981; }
+        #pending_count { color: #2563eb; }
+
+        .activity-panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,.02); }
+        .activity-list { margin-top: 12px; display: flex; flex-direction: column; gap: 10px; max-height: 250px; overflow-y: auto; }
+        .activity-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8fafc; border-radius: 10px; border: 1px solid #f1f5f9; font-size: 13px; }
+        .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+        .badge-pickup { background: #dbeafe; color: #1e40af; }
+        .badge-return { background: #ccfbf1; color: #115e59; }
+
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #111827; color: #fff; padding: 12px 16px; border-radius: 12px; z-index: 9999; box-shadow: 0 8px 20px rgba(0, 0, 0, .2); font-size: 13px; }
+        #loadingOverlay { display: none; position: fixed; inset: 0; background: rgba(255, 255, 255, .85); backdrop-filter: blur(4px); z-index: 99999; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: #2563eb }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="dashboard-header">
+            <h2>🏠 Home Dashboard (<span id="monthTitle">...</span>)</h2>
+            <button class="refresh-badge" onclick="refreshDashboardData()">🔄 Sync Realtime</button>
+        </div>
+
+        <div class="section-title">Daily Operations Stats</div>
+        <div class="cards">
+            <div class="card card-p-today">
+                <h3>Pickup Today</h3>
+                <div class="big" id="pickup_today">0</div>
+            </div>
+            <div class="card card-r-today">
+                <h3>Return Today</h3>
+                <div class="big" id="return_today">0</div>
+            </div>
+            <div class="card card-p-yesterday">
+                <h3>Pickup Yesterday</h3>
+                <div class="big" id="pickup_yesterday">0</div>
+            </div>
+            <div class="card card-r-yesterday">
+                <h3>Return Yesterday</h3>
+                <div class="big" id="return_yesterday">0</div>
+            </div>
+            <div class="card card-p-total">
+                <h3>MTD Pickup</h3>
+                <div class="big" id="pickup_total">0</div>
+            </div>
+            <div class="card card-r-total">
+                <h3>MTD Return</h3>
+                <div class="big" id="return_total">0</div>
+            </div>
+        </div>
+
+        <div class="stat">
+            <div>Processed Scans (Today Total): <span id="saved_count">0</span></div>
+            <div>Total MTD Volume: <span id="pending_count">0</span></div>
+        </div>
+
+        <div class="activity-panel">
+            <div class="section-title">Latest Live Activity Stream (Recent Sheet Rows)</div>
+            <div class="activity-list" id="activityStreamBox">
+                <div style="color: gray; font-style: italic; font-size: 13px; padding: 10px;">Loading live data rows...</div>
+            </div>
+        </div>
+          
+        <div class="section-title">Quick Routing Access</div>
+        <div class="cards" style="grid-template-columns: repeat(3, 1fr);">
+            <div class="nav-card" onclick="go('daily.html')">📲 Daily Scan Window</div>
+            <div class="nav-card" onclick="go('find-order.html')">🔍 Find & Sync Order</div>
+            <div class="nav-card" onclick="go('bulk-update.html')">🔄 Bulk 3PL Sync</div>
+        </div>
+    </div>
+
+    <div id="loadingOverlay">Syncing Data Nodes...</div>
+
+    <script>
+        /* ===================================
+        CONFIG
+        =================================== */
+        // Yahan apna Google Apps Script Web App URL paste karein
+        const API_URL = "https://script.google.com/macros/s/AKfycbyBR10FMSEz7trq0JUkEZwKRv64AlIX0D5ZZn4LXe7zvMsU1rr66CN8RZ6AbSE_2x8o/exec"; 
+
+        function go(page) {
+            window.location.href = page;
+        }
+
+        /* ===================================
+        REFRESH/LOAD DASHBOARD DATA METRICS
+        =================================== */
+        async function refreshDashboardData() {
+            showLoader();
+            try {
+                // 1. Fetch main grid summary data
+                const dashboardResponse = await fetch(`${API_URL}?action=getDashboardCounts`);
+                const dbData = await dashboardResponse.json();
+
+                // 2. Safe Fallback Option: Using getRecentRecords instead of broken getTodayRecords function
+                const recentResponse = await fetch(`${API_URL}?action=getRecentRecords`);
+                const recentData = await recentResponse.json();
+
+                hideLoader();
+
+                if (dbData.success) {
+                    // Update layout values directly
+                    document.getElementById("pickup_today").innerText = dbData.todayPickup || 0;
+                    document.getElementById("return_today").innerText = dbData.todayReturn || 0;
+                    document.getElementById("pickup_yesterday").innerText = dbData.yesterdayPickup || 0;
+                    document.getElementById("return_yesterday").innerText = dbData.yesterdayReturn || 0;
+                    document.getElementById("pickup_total").innerText = dbData.monthPickup || 0;
+                    document.getElementById("return_total").innerText = dbData.monthReturn || 0;
+                    document.getElementById("monthTitle").innerText = dbData.monthName || "Active Month";
+
+                    // Calculation mapping variables
+                    const todayTotal = (dbData.todayPickup || 0) + (dbData.todayReturn || 0);
+                    const monthTotal = (dbData.monthPickup || 0) + (dbData.monthReturn || 0);
+                    
+                    document.getElementById("saved_count").innerText = todayTotal;
+                    document.getElementById("pending_count").innerText = monthTotal;
+
+                    // Render Stream using reliable fallback endpoint
+                    renderLiveStream(recentData.rows || []);
+                    toast("📊 Dashboard metrics updated!");
+                } else {
+                    toast("Error parsing live database counts.");
+                }
+
+            } catch (err) {
+                hideLoader();
+                console.error(err);
+                toast("Could not contact server. Please verify API_URL configuration.");
+            }
+        }
+
+        /* ===================================
+        RENDER LOG ACTIVITY GRIDS
+        =================================== */
+        function renderLiveStream(rows) {
+            const streamBox = document.getElementById("activityStreamBox");
+            if (!rows || rows.length === 0) {
+                streamBox.innerHTML = `<div style="color: gray; font-style: italic; font-size: 13px; padding: 10px;">No recent records found in the database.</div>`;
+                return;
+            }
+
+            let html = "";
+            // Extract top 8 recent scanning rows
+            const displayRows = rows.slice(0, 8);
+            
+            displayRows.forEach(r => {
+                const badgeClass = r.type === "Pickup" ? "badge-pickup" : "badge-return";
+                html += `
+                    <div class="activity-item">
+                        <div>
+                            <span class="badge ${badgeClass}">${r.type}</span>
+                            <strong style="margin-left:8px;">${r.awb}</strong>
+                            <span style="color:gray; font-size:11px; margin-left:8px;">(Order: ${r.orderId || 'N/A'})</span>
+                        </div>
+                        <div style="font-weight:600; color:#4b5563;">${r.courier || 'MANUAL'} | <span style="color:#2563eb;">${r.status || 'Scanned'}</span></div>
+                    </div>
+                `;
+            });
+            streamBox.innerHTML = html;
+        }
+
+        function showLoader() { document.getElementById("loadingOverlay").style.display = "flex"; }
+        function hideLoader() { document.getElementById("loadingOverlay").style.display = "none"; }
+        function toast(msg) {
+            const t = document.createElement("div");
+            t.className = "toast"; t.innerText = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 2500);
+        }
+
+        window.onload = function() {
+            if (API_URL !== "YOUR_SPREADSHEET_WEB_APP_URL_HERE") {
+                refreshDashboardData();
+                setInterval(refreshDashboardData, 45000); // Auto-sync components
+            } else {
+                document.getElementById("monthTitle").innerHTML = "<b style='color:red;'>Set API_URL Line 77</b>";
+            }
+        };
+    </script>
+</body>
+
+</html>

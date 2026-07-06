@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Harsidhi Ventures Scan System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/html5-qrcode"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Inter, sans-serif }
+        body { background: #f3f6fb; min-height: 100vh; display: flex; align-items: center; justify-content: center; color: #1f2937; padding: 15px; }
+        .main-container { width: 100%; max-width: 550px; }
+        .header { text-align: center; font-size: 20px; font-weight: 700; color: #2563eb; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 4px 15px rgba(0, 0, 0, .05) }
+        .panel-header { padding: 14px 16px; font-weight: 700; font-size: 15px; background: #fafbfc; border-bottom: 1px solid #eef2f7; text-align: center; color: #475569; }
+        .center-content { padding: 20px; display: flex; flex-direction: column; gap: 14px }
+        .mode-row, .action-row { display: flex; gap: 10px }
+        .mode-btn { flex: 1; height: 50px; border-radius: 12px; border: 2px solid; font-weight: 700; background: #fff; cursor: pointer; transition: .2s; font-size: 15px; }
+        .pickup { border-color: #2563eb; color: #2563eb }
+        .return { border-color: #14b8a6; color: #14b8a6 }
+        .active-pickup { background: #2563eb; color: #fff }
+        .active-return { background: #14b8a6; color: #fff }
+        .scan-panel { display: none; flex-direction: column; gap: 12px; padding: 16px; border: 1px solid #e5e7eb; border-radius: 14px; background: #fafcff }
+        .input { height: 46px; padding: 0 14px; border: 1px solid #dbe2ea; border-radius: 12px; outline: none; background: #fff; font-size: 14px; width: 100%; }
+        .input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, .12) }
+        #reader { display: none; width: 100%; overflow: hidden; border-radius: 12px; margin-bottom: 5px; border: 1px dashed #cbd5e1; }
+        
+        /* Data Preview Card Style */
+        .result-card { padding: 14px; border: 1px solid #e5e7eb; border-radius: 14px; background: #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, .03); display: none; font-size: 13px; line-height: 1.6; }
+        .data-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+        .data-table td { padding: 4px 0; border-bottom: 1px solid #f3f4f6; }
+        .data-table td.label { color: #6b7280; font-weight: 500; width: 35%; }
+        .data-table td.val { color: #111827; font-weight: 600; }
+
+        .btn { border: none; border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 600; cursor: pointer; transition: .2s; text-align: center; }
+        .btn:hover { transform: translateY(-1px); opacity: .95 }
+        .btn-camera { background: #2563eb; color: #fff }
+        .btn-manual { background: #475569; color: #fff }
+        .btn-save { background: #10b981; color: #fff }
+        .btn-stop { background: #ef4444; color: #fff }
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #111827; color: #fff; padding: 12px 16px; border-radius: 12px; z-index: 9999; box-shadow: 0 8px 20px rgba(0, 0, 0, .2) }
+        #loadingOverlay { display: none; position: fixed; inset: 0; background: rgba(255, 255, 255, .85); backdrop-filter: blur(4px); z-index: 99999; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; color: #2563eb }
+    </style>
+</head>
+
+<body>
+
+    <div class="main-container">
+        <div class="header">HARSIDHI VENTURES SYSTEM</div>
+
+        <div class="panel">
+            <div class="panel-header">📲 Scan Operations (Pickup / Return)</div>
+            <div class="center-content">
+                <!-- Mode Selection -->
+                <div class="mode-row">
+                    <button id="pickupBtn" class="mode-btn pickup" onclick="selectType('Pickup')">Pickup</button>
+                    <button id="returnBtn" class="mode-btn return" onclick="selectType('Return')">Return</button>
+                </div>
+
+                <!-- Active Work Scan Panel -->
+                <div id="scanPanel" class="scan-panel">
+                    <div class="action-row">
+                        <button class="btn btn-camera" style="flex: 1;" onclick="startCamera()">📷 Camera Scan</button>
+                        <button class="btn btn-manual" style="flex: 1;" onclick="focusAWB()">⌨ Manual Input</button>
+                    </div>
+                    <div id="reader"></div>
+                    <input id="awbInput" class="input" placeholder="Scan AWB or Type & Press Enter">
+                    <input id="orderInput" class="input" placeholder="Order ID (Manual Fallback)" style="display: none;">
+                    
+                    <!-- Preview Area displaying Date, Type, AWB, Order ID, Courier -->
+                    <div id="resultCard" class="result-card"></div>
+                    
+                    <div class="action-row" style="margin-top: 5px;">
+                        <button class="btn btn-save" style="flex: 1;" onclick="saveEntry()">Next (Save)</button>
+                        <button class="btn btn-stop" style="flex: 1;" onclick="stopWork()">Stop</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fullscreen Loader Overlay -->
+    <div id="loadingOverlay">Processing, please wait...</div>
+
+    <script>
+        /* ===================================
+        CONFIG
+        =================================== */
+        // Yahan par apna exact Google Apps Script Web App URL paste karein
+        const API_URL = "https://script.google.com/macros/s/AKfycbyBR10FMSEz7trq0JUkEZwKRv64AlIX0D5ZZn4LXe7zvMsU1rr66CN8RZ6AbSE_2x8o/exec"; 
+
+        /* ===================================
+        GLOBAL VARIABLES
+        =================================== */
+        let currentType = "";
+        let currentTracking = null;
+        let html5QrCode = null;
+        let scannerBuffer = "";
+        
+        const beep = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
+
+        /* ===================================
+        TYPE SELECTION (Pickup / Return)
+        =================================== */
+        function selectType(type) {
+            currentType = type;
+            document.getElementById("scanPanel").style.display = "flex";
+            document.getElementById("pickupBtn").classList.remove("active-pickup");
+            document.getElementById("returnBtn").classList.remove("active-return");
+
+            if (type === "Pickup") {
+                document.getElementById("pickupBtn").classList.add("active-pickup");
+            } else {
+                document.getElementById("returnBtn").classList.add("active-return");
+            }
+
+            clearForm();
+            focusAWB();
+        }
+
+        /* ===================================
+        CLEAR FORM FIELDS
+        =================================== */
+        function clearForm() {
+            currentTracking = null;
+            document.getElementById("awbInput").value = "";
+            document.getElementById("orderInput").value = "";
+            document.getElementById("orderInput").style.display = "none";
+            document.getElementById("resultCard").style.display = "none";
+            document.getElementById("resultCard").innerHTML = "";
+        }
+
+        function focusAWB() {
+            document.getElementById("awbInput").focus();
+        }
+
+        /* ===================================
+        CAMERA SCANNING LOGIC (Html5Qrcode)
+        =================================== */
+        async function startCamera() {
+            try {
+                if (html5QrCode) {
+                    await stopCamera();
+                }
+                document.getElementById("reader").style.display = "block";
+                html5QrCode = new Html5Qrcode("reader");
+                
+                await html5QrCode.start(
+                    { facingMode: "environment" },
+                    { fps: 20, qrbox: { width: 280, height: 140 } },
+                    function(decodedText) {
+                        document.getElementById("awbInput").value = decodedText;
+                        playSuccessSound();
+                        stopCamera();
+                        trackShipment();
+                    }
+                );
+            } catch (err) {
+                toast("Camera Permission Error");
+                console.error(err);
+            }
+        }
+
+        async function stopCamera() {
+            try {
+                if (html5QrCode) {
+                    await html5QrCode.stop();
+                    await html5QrCode.clear();
+                    html5QrCode = null;
+                }
+            } catch (err) {}
+            document.getElementById("reader").style.display = "none";
+        }
+
+        /* ===================================
+        MANUAL INPUT & HARDWARE BARCODE SCANNER
+        =================================== */
+        document.getElementById("awbInput").addEventListener("keydown", function(e) {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                trackShipment();
+            }
+        });
+
+        // USB Scanner Event Handler
+        document.addEventListener("keydown", function(e) {
+            if (document.activeElement.id !== "awbInput") return;
+            
+            if (e.key === "Enter") {
+                e.preventDefault();
+                const awb = scannerBuffer.trim();
+                if (awb.length > 5) {
+                    document.getElementById("awbInput").value = awb;
+                    trackShipment();
+                }
+                scannerBuffer = "";
+                return;
+            }
+
+            if (e.key.length === 1) {
+                scannerBuffer += e.key;
+            }
+        });
+
+        /* ===================================
+        FETCH API TRACKING DATA
+        =================================== */
+        async function trackShipment() {
+            const awb = document.getElementById("awbInput").value.trim();
+            if (!awb) {
+                toast("Please Scan/Enter AWB");
+                return;
+            }
+
+            showLoader();
+            showResultStatus("<i>Fetching Live Tracking Data...</i>");
+
+            try {
+                const response = await fetch(`${API_URL}?action=trackShipment&awb=${encodeURIComponent(awb)}`);
+                const result = await response.json();
+                hideLoader();
+
+                if (result && result.success) {
+                    currentTracking = result;
+                    renderTrackingCard(result);
+                } else {
+                    openManualFallback();
+                }
+            } catch (err) {
+                hideLoader();
+                console.error(err);
+                openManualFallback();
+            }
+        }
+
+        function showResultStatus(htmlContent) {
+            const card = document.getElementById("resultCard");
+            card.style.display = "block";
+            card.innerHTML = htmlContent;
+        }
+
+        function openManualFallback() {
+            currentTracking = null;
+            const todayStr = new Date().toLocaleDateString('en-GB'); // dd/mm/yyyy format
+            
+            // Displaying 5 Columns for Manual Fallback Entry
+            showResultStatus(`
+                <div style="color:#dc2626; font-weight:600; border-bottom: 1px solid #e5e7eb; padding-bottom:4px; margin-bottom:6px;">⚠️ Tracking Not Found</div>
+                <table class="data-table">
+                    <tr><td class="label">Date:</td><td class="val">${todayStr}</td></tr>
+                    <tr><td class="label">Type:</td><td class="val">${currentType}</td></tr>
+                    <tr><td class="label">AWB:</td><td class="val">${document.getElementById("awbInput").value.trim()}</td></tr>
+                    <tr><td class="label">Order ID:</td><td class="val" style="color:#dc2626;">Manual Input Required</td></tr>
+                    <tr><td class="label">Courier:</td><td class="val">MANUAL</td></tr>
+                </table>
+            `);
+            document.getElementById("orderInput").style.display = "block";
+            document.getElementById("orderInput").focus();
+        }
+
+        function renderTrackingCard(data) {
+            const card = document.getElementById("resultCard");
+            card.style.display = "block";
+            const todayStr = new Date().toLocaleDateString('en-GB');
+
+            // Displaying Exact 5 Columns Grid
+            card.innerHTML = `
+                <div style="color:#10b981; font-weight:600; border-bottom: 1px solid #e5e7eb; padding-bottom:4px; margin-bottom:6px;">✅ Tracking Data Fetched</div>
+                <table class="data-table">
+                    <tr><td class="label">Date:</td><td class="val">${todayStr}</td></tr>
+                    <tr><td class="label">Type:</td><td class="val">${currentType}</td></tr>
+                    <tr><td class="label">AWB:</td><td class="val">${data.awb || ""}</td></tr>
+                    <tr><td class="label">Order ID:</td><td class="val">${data.orderId || ""}</td></tr>
+                    <tr><td class="label">Courier:</td><td class="val">${data.courier || ""}</td></tr>
+                </table>
+            `;
+            document.getElementById("orderInput").value = data.orderId || "";
+            document.getElementById("orderInput").style.display = "block";
+        }
+
+        /* ===================================
+        SAVE DATA (POST REQUEST TO SHEET WITH BLOCK DUPLICATE)
+        =================================== */
+        async function saveEntry() {
+            if (!currentType) {
+                toast("Select Pickup / Return Mode First");
+                return;
+            }
+
+            const awb = document.getElementById("awbInput").value.trim();
+            if (!awb) {
+                toast("AWB Missing");
+                return;
+            }
+
+            const orderId = document.getElementById("orderInput").value.trim();
+
+            const payload = {
+                type: currentType,
+                awb: awb,
+                orderId: orderId,
+                courier: currentTracking?.courier || "MANUAL",
+                status: currentTracking?.status || "Pending",
+                customerName: currentTracking?.customerName || "",
+                city: currentTracking?.city || "",
+                state: currentTracking?.state || "",
+                destination: currentTracking?.destination || "",
+                pickupDate: currentTracking?.pickupDate || "",
+                deliveredDate: currentTracking?.deliveredDate || "",
+                expectedDate: currentTracking?.expectedDate || currentTracking?.estimatedDate || "",
+                isRTO: currentTracking?.isRTO || false
+            };
+
+            showLoader();
+            try {
+                const response = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({
+                        action: "saveEntry",
+                        payload: payload
+                    })
+                });
+
+                const text = await response.text();
+                let result = {};
+                try { result = JSON.parse(text); } catch (e) {
+                    hideLoader();
+                    toast("Invalid Server Response");
+                    return;
+                }
+
+                hideLoader();
+
+                // If code.gs detects duplicate, block and show error
+                if (result.duplicate) {
+                    toast("❌ Blocked: Duplicate AWB detected for this type!");
+                    document.getElementById("awbInput").select();
+                    return;
+                }
+
+                if (!result.success) {
+                    toast(result.message || "Save Failed");
+                    return;
+                }
+
+                playSuccessSound();
+                toast("🎉 Row Saved Successfully!");
+                clearForm();
+                focusAWB();
+            } catch (err) {
+                hideLoader();
+                console.error(err);
+                toast("Save Error: " + err.message);
+            }
+        }
+
+        /* ===================================
+        STOP WORK
+        =================================== */
+        function stopWork() {
+            stopCamera();
+            currentType = "";
+            clearForm();
+            document.getElementById("scanPanel").style.display = "none";
+            document.getElementById("pickupBtn").classList.remove("active-pickup");
+            document.getElementById("returnBtn").classList.remove("active-return");
+            toast("Process Reset");
+        }
+
+        /* ===================================
+        HELPERS
+        =================================== */
+        function showLoader() { document.getElementById("loadingOverlay").style.display = "flex"; }
+        function hideLoader() { document.getElementById("loadingOverlay").style.display = "none"; }
+        function playSuccessSound() { try { beep.currentTime = 0; beep.play(); } catch (err) {} }
+        function toast(msg) {
+            const t = document.createElement("div");
+            t.className = "toast"; t.innerText = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 2500);
+        }
+
+        window.onload = function() {
+            if(API_URL === "YOUR_SPREADSHEET_WEB_APP_URL_HERE") {
+                alert("Please add your web app URL inside code first!");
+            }
+        };
+    </script>
+</body>
+
+</html>

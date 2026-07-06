@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Harsidhi Ventures - Return Mapping Control</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Inter, sans-serif }
+        body { background: #eefdfa; min-height: 100vh; color: #1f2937; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 16px 20px; border-radius: 14px; border: 1px solid #ccfbf1; border-left: 5px solid #14b8a6; }
+        
+        .row-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px; box-shadow: 0 4px 10px rgba(0,0,0,.01); display: flex; flex-direction: column; gap: 12px; position: relative; }
+        .row-card.pending { border-left: 6px solid #ef4444; background: #fff8f8; }
+        .row-card.processed { border-left: 6px solid #10b981; background: #f0fdf4; opacity: 0.85; }
+        
+        .meta-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; font-size: 13px; font-weight: 500; }
+        .meta-grid div span { color: #64748b; font-weight: 400; display: block; font-size: 11px; text-transform: uppercase; }
+
+        .sku-mapping-zone { border-top: 1px dashed #cbd5e1; padding-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .sku-input-row { display: flex; gap: 8px; align-items: center; }
+        
+        .input, select { height: 38px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 13px; }
+        .select-sku { flex: 2; }
+        .input-qty { width: 80px; text-align: center; }
+        
+        .btn-mini { background: #64748b; color: white; border: none; width: 30px; height: 30px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 15px; }
+        .btn-mini.add { background: #14b8a6; }
+        .btn-mini.remove { background: #ef4444; }
+        
+        .status-badge { position: absolute; top: 16px; right: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 3px 8px; border-radius: 5px; }
+        .pending .status-badge { background: #fee2e2; color: #991b1b; }
+        .processed .status-badge { background: #dcfce7; color: #166534; }
+
+        .btn-save { background: #14b8a6; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px; align-self: flex-end; }
+        .btn-save:hover { background: #0d9488; }
+
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #111827; color: #fff; padding: 12px 16px; border-radius: 12px; z-index: 9999; font-size: 13px; }
+        #loadingOverlay { display: none; position: fixed; inset: 0; background: rgba(255, 255, 255, .85); backdrop-filter: blur(4px); z-index: 99999; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: #14b8a6 }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <div>
+                <h2 style="color:#0d9488;">📦 Live Returns Mapping Board</h2>
+                <p style="font-size:12px; color:#64748b; margin-top:2px;">Mapped SKUs will increment 'Returns' to automatically add stock back to inventory.</p>
+            </div>
+            <button class="btn-save" style="background:#475569;" onclick="loadReturnRows()">🔄 Sync Grid</button>
+        </div>
+
+        <div id="returnRowsList" style="display:flex; flex-direction:column; gap:14px;">
+            <div style="text-align:center; padding:30px; color:gray; font-style:italic;">Querying filtered entries...</div>
+        </div>
+    </div>
+
+    <div id="loadingOverlay">Processing Return Inventory Nodes...</div>
+
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbyBR10FMSEz7trq0JUkEZwKRv64AlIX0D5ZZn4LXe7zvMsU1rr66CN8RZ6AbSE_2x8o/exec";
+        let skuDirectoryList = [];
+
+        async function loadReturnRows() {
+            showLoader();
+            try {
+                if(skuDirectoryList.length === 0) {
+                    const skuRes = await fetch(`${API_URL}?action=inventoryProducts`);
+                    const skuData = await skuRes.json();
+                    if(skuData.success) skuDirectoryList = skuData.products || [];
+                }
+
+                const response = await fetch(`${API_URL}?action=getFilteredDailyRows&type=Return`);
+                const result = await response.json();
+                hideLoader();
+
+                if(result.success) {
+                    renderReturnCards(result.rows || []);
+                }
+            } catch(e) { hideLoader(); toast("Error connecting to script engine."); }
+        }
+
+        function renderReturnCards(rows) {
+            const container = document.getElementById("returnRowsList");
+            if(rows.length === 0) {
+                container.innerHTML = `<div style="text-align:center; padding:30px; background:white; border-radius:12px;">No return row logs found.</div>`;
+                return;
+            }
+
+            let html = "";
+            rows.forEach(r => {
+                const cardState = r.isProcessed ? "processed" : "pending";
+                const statusText = r.isProcessed ? "SKU Mapped (Green)" : "Required SKU (Red Mark)";
+                
+                html += `
+                    <div class="row-card ${cardState}" id="card-block-${r.rowId}">
+                        <span class="status-badge">${statusText}</span>
+                        <div class="meta-grid">
+                            <div><span>Scan Date</span><b>${r.date}</b></div>
+                            <div><span>AWB Number</span><b>${r.awb}</b></div>
+                            <div><span>Order Reference</span><b>${r.orderId || 'N/A'}</b></div>
+                            <div><span>Courier Courier</span><b>${r.courier || 'N/A'}</b></div>
+                        </div>
+
+                        ${!r.isProcessed ? `
+                            <div class="sku-mapping-zone">
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <label style="font-size:12px; font-weight:700; color:#475569;">Assign Products Recd in Return AWB</label>
+                                    <button class="btn-mini add" onclick="addNewSkuRowLine('${r.rowId}')" type="button">+</button>
+                                </div>
+                                <div id="sku-fields-container-${r.rowId}" style="display:flex; flex-direction:column; gap:6px;">
+                                    <div class="sku-input-row">
+                                        <select class="select-sku" id="sku-sel-${r.rowId}-0">${generateSkuOptionsHtml()}</select>
+                                        <input type="number" class="input input-qty" id="sku-qty-${r.rowId}-0" min="1" value="1" placeholder="Qty">
+                                        <button class="btn-mini remove" onclick="this.parentElement.remove()">-</button>
+                                    </div>
+                                </div>
+                                <button class="btn-save" onclick="saveReturnSkuMapping('${r.rowId}')" style="margin-top:5px;">Confirm & Load Back Stock</button>
+                            </div>
+                        ` : `<div style="font-size:12px; color:#166534; font-weight:600; border-top:1px dashed #cbd5e1; padding-top:6px;">✨ Stock loaded back into active return grid inventory row.</div>`}
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function generateSkuOptionsHtml() {
+            let options = '<option value="">-- Choose SKU --</option>';
+            skuDirectoryList.forEach(p => { options += `<option value="${p.sku}">${p.sku}</option>`; });
+            return options;
+        }
+
+        function addNewSkuRowLine(rowId) {
+            const container = document.getElementById(`sku-fields-container-${rowId}`);
+            const uniqueIndex = container.children.length;
+            const newRow = document.createElement("div");
+            newRow.className = "sku-input-row";
+            newRow.innerHTML = `
+                <select class="select-sku" id="sku-sel-${rowId}-${uniqueIndex}">${generateSkuOptionsHtml()}</select>
+                <input type="number" class="input input-qty" id="sku-qty-${rowId}-${uniqueIndex}" min="1" value="1">
+                <button class="btn-mini remove" onclick="this.parentElement.remove()">-</button>
+            `;
+            container.appendChild(newRow);
+        }
+
+        async function saveReturnSkuMapping(rowId) {
+            const container = document.getElementById(`sku-fields-container-${rowId}`);
+            const skuItems = [];
+
+            for(let child of container.children) {
+                const selectEl = child.querySelector(".select-sku");
+                const qtyEl = child.querySelector(".input-qty");
+                
+                if(selectEl && selectEl.value && qtyEl && qtyEl.value) {
+                    skuItems.push({ sku: selectEl.value, qty: parseInt(qtyEl.value, 10) });
+                }
+            }
+
+            if(skuItems.length === 0) { toast("Select at least 1 valid SKU code entry."); return; }
+
+            showLoader();
+            try {
+                const response = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({
+                        action: "processDailyRowSku",
+                        payload: { rowId: rowId, type: "Return", skuItems: skuItems }
+                    })
+                });
+                const res = await response.json();
+                hideLoader();
+                if(res.success) {
+                    toast("🎉 Saved & Inventory Stock Added!");
+                    loadReturnRows();
+                }
+            } catch(e) { hideLoader(); toast("Failed saving entry data."); }
+        }
+
+        function showLoader() { document.getElementById("loadingOverlay").style.display = "flex"; }
+        function hideLoader() { document.getElementById("loadingOverlay").style.display = "none"; }
+        function toast(msg) {
+            const t = document.createElement("div"); t.className = "toast"; t.innerText = msg;
+            document.body.appendChild(t); setTimeout(() => t.remove(), 2500);
+        }
+        window.onload = loadReturnRows;
+    </script>
+</body>
+</html>

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Harsidhi Ventures - Premium Bulk Update System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Inter, sans-serif }
+        body { background: #f3f6fb; min-height: 100vh; display: flex; align-items: center; justify-content: center; color: #1f2937; padding: 20px; }
+        .bulk-container { width: 100%; max-width: 500px; }
+        .header { text-align: center; font-size: 20px; font-weight: 700; color: #2563eb; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,.04); display: flex; flex-direction: column; }
+        .panel-header { padding: 16px; font-weight: 700; font-size: 16px; background: #fafbfc; border-bottom: 1px solid #eef2f7; text-align: center; color: #374151; }
+        .content { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+        
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 13px; font-weight: 600; color: #475569; }
+        .input { height: 46px; padding: 0 14px; border: 1px solid #dbe2ea; border-radius: 12px; outline: none; background: #fff; font-size: 14px; width: 100%; font-weight: 500; color: #1f2937; }
+        .input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, .12) }
+        
+        .count-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 8px 0; }
+        .count-box { padding: 14px; border-radius: 12px; text-align: center; border: 1px solid #e5e7eb; background: #f8fafc; }
+        .count-box.pickup { border-left: 4px solid #2563eb; }
+        .count-box.return { border-left: 4px solid #14b8a6; }
+        .count-box h3 { font-size: 22px; font-weight: 700; margin-top: 4px; }
+        .count-box.pickup h3 { color: #2563eb; }
+        .count-box.return h3 { color: #14b8a6; }
+        
+        .btn { border: none; border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 600; cursor: pointer; transition: .2s; text-align: center; width: 100%; display: block; }
+        .btn:hover { transform: translateY(-1px); opacity: .95; }
+        .btn:disabled { background: #cbd5e1 !important; color: #94a3b8 !important; cursor: not-allowed; transform: none; }
+        .btn-load { background: #475569; color: #fff; margin-bottom: 4px; }
+        .btn-pickup { background: #2563eb; color: #fff; }
+        .btn-return { background: #14b8a6; color: #fff; }
+        
+        .progress-panel { border: 1px solid #e5e7eb; border-radius: 14px; background: #f8fafc; padding: 16px; margin-top: 4px; }
+        .progress-header { font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        #bulkProgress { font-size: 14px; font-weight: 500; color: #0f172a; line-height: 1.5; }
+        
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #111827; color: #fff; padding: 12px 16px; border-radius: 12px; z-index: 9999; box-shadow: 0 8px 20px rgba(0, 0, 0, .2); font-size: 13px; font-weight: 500; }
+        #loadingOverlay { display: none; position: fixed; inset: 0; background: rgba(255, 255, 255, .85); backdrop-filter: blur(4px); z-index: 99999; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: #2563eb }
+    </style>
+</head>
+
+<body>
+
+    <div class="bulk-container">
+        <div class="header">Harsidhi Ventures</div>
+
+        <div class="panel">
+            <div class="panel-header">🔄 Automated Bulk 3PL Sync Manager</div>
+            <div class="content">
+                
+                <!-- Date Selector Input -->
+                <div class="form-group">
+                    <label for="bulkDate">Select Operational Scan Date</label>
+                    <input type="date" id="bulkDate" class="input">
+                </div>
+
+                <!-- Load Counts Trigger -->
+                <button class="btn btn-load" onclick="loadBulkCounts()">📊 Load Date Summary</button>
+
+                <!-- Status Summary Display Card Grid -->
+                <div class="count-grid">
+                    <div class="count-box pickup">
+                        <span style="font-size: 12px; color: #64748b; font-weight: 600;">Pickup Scans</span>
+                        <h3 id="pickupCountDisplay">0</h3>
+                    </div>
+                    <div class="count-box return">
+                        <span style="font-size: 12px; color: #64748b; font-weight: 600;">Return Scans</span>
+                        <h3 id="returnCountDisplay">0</h3>
+                    </div>
+                </div>
+
+                <!-- Execution Control Buttons -->
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
+                    <button id="pickupUpdateBtn" class="btn btn-pickup" onclick="startBulkUpdate('Pickup')">⚡ Run Bulk Sync: Pickups</button>
+                    <button id="returnUpdateBtn" class="btn btn-return" onclick="startBulkUpdate('Return')">⚡ Run Bulk Sync: Returns</button>
+                </div>
+
+                <!-- Progress Tracker Container -->
+                <div class="progress-panel">
+                    <div class="progress-header">Console Output / Logs</div>
+                    <div id="bulkProgress">System Ready. Please select a date to start live synchronizations.</div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Fullscreen Loader Component -->
+    <div id="loadingOverlay">Processing Sheet Request...</div>
+
+    <script>
+        /* ===================================
+        CONFIG
+        =================================== */
+        // Yahan par apna exact Google Apps Script Web App URL paste karein
+        const API_URL = "https://script.google.com/macros/s/AKfycbyBR10FMSEz7trq0JUkEZwKRv64AlIX0D5ZZn4LXe7zvMsU1rr66CN8RZ6AbSE_2x8o/exec"; 
+
+        /* ===================================
+        GLOBAL STATE VARIABLES
+        =================================== */
+        let bulkRunning = false;
+
+        /* ===================================
+        UTILITY: FORMAT DATE COMPATIBILITY
+        =================================== */
+        function formatInputDate(dateStr) {
+            if (!dateStr) return "";
+            const d = new Date(dateStr);
+            const dd = String(d.getDate()).padStart(2, "0");
+            const mm = String(d.getMonth() + 1).padStart(2, "0");
+            const yyyy = d.getFullYear();
+            return `${dd}/${mm}/${yyyy}`;
+        }
+
+        /* ===================================
+        LOAD BULK ROW COUNTS FROM BACKEND
+        =================================== */
+        async function loadBulkCounts() {
+            const date = document.getElementById("bulkDate").value;
+            if (!date) {
+                toast("Please select an operational date first.");
+                return;
+            }
+
+            showLoader();
+            try {
+                const formatted = formatInputDate(date);
+                const response = await fetch(`${API_URL}?action=getBulkCounts&date=${encodeURIComponent(formatted)}`);
+                const data = await response.json();
+                hideLoader();
+
+                if (data.success) {
+                    document.getElementById("pickupCountDisplay").innerText = data.pickup || 0;
+                    document.getElementById("returnCountDisplay").innerText = data.return || 0;
+                    document.getElementById("bulkProgress").innerHTML = `Summary loaded for <b>${formatted}</b>. Select an action block above to execute.`;
+                    toast("Summary counts loaded!");
+                } else {
+                    toast("Failed to pull summary stats.");
+                }
+            } catch (err) {
+                hideLoader();
+                console.error(err);
+                toast("Error loading sheet record details.");
+            }
+        }
+
+        /* ===================================
+        EXECUTE BULK SYNCHRONIZATION LOOP
+        =================================== */
+        async function startBulkUpdate(type) {
+            if (bulkRunning) {
+                toast("Another automated process loop is currently active.");
+                return;
+            }
+
+            const date = document.getElementById("bulkDate").value;
+            if (!date) {
+                toast("Please choose a target operations date.");
+                return;
+            }
+
+            bulkRunning = true;
+            document.getElementById("pickupUpdateBtn").disabled = true;
+            document.getElementById("returnUpdateBtn").disabled = true;
+
+            const formatted = formatInputDate(date);
+            const progressConsole = document.getElementById("bulkProgress");
+            progressConsole.innerHTML = "Initializing batch queue pipeline...";
+
+            try {
+                // Fetch targeted AWB row structures from sheet
+                const response = await fetch(`${API_URL}?action=getBulkRows&date=${encodeURIComponent(formatted)}&type=${encodeURIComponent(type)}`);
+                const result = await response.json();
+                const rows = result.rows || [];
+
+                if (rows.length === 0) {
+                    progressConsole.innerHTML = `⚠️ No processing entries found for <b>${type}</b> on <b>${formatted}</b>.`;
+                    cleanupExecutionState();
+                    return;
+                }
+
+                let updated = 0;
+                let failed = 0;
+
+                // Sync each individual entry sequentially to respect platform restrictions
+                for (let i = 0; i < rows.length; i++) {
+                    progressConsole.innerHTML = `⏳ Syncing item <b>${i + 1} of ${rows.length}</b><br>📦 AWB: <code>${rows[i].awb}</code><br>🔄 Request sent to live courier node...`;
+                    
+                    try {
+                        const syncResponse = await fetch(`${API_URL}?action=updateSingleAWB&awb=${encodeURIComponent(rows[i].awb)}`);
+                        const syncResult = await syncResponse.json();
+                        
+                        if (syncResult.success) {
+                            updated++;
+                        } else {
+                            failed++;
+                        }
+                    } catch (e) {
+                        failed++;
+                    }
+                }
+
+                // Complete output report layout rendering
+                progressConsole.innerHTML = `
+                    <b style="color: #10b981;">✅ Batch Sync Cycle Finished!</b><br>
+                    ━━━━━━━━━━━━━━━━━━<br>
+                    📈 <b>Total Target Records:</b> ${rows.length}<br>
+                    ✨ <b>Successfully Synced:</b> ${updated}<br>
+                    ❌ <b>Failed / Errors:</b> ${failed}
+                `;
+                toast(`Bulk sync operations completed for ${type}!`);
+
+            } catch (err) {
+                console.error(err);
+                progressConsole.innerHTML = "<span style='color:red;'>Fatal pipeline error encountered during execution block loop.</span>";
+            } finally {
+                cleanupExecutionState();
+            }
+        }
+
+        /* ===================================
+        CLEANUP CONTROL ELEMENT STATES
+        =================================== */
+        function cleanupExecutionState() {
+            bulkRunning = false;
+            document.getElementById("pickupUpdateBtn").disabled = false;
+            document.getElementById("returnUpdateBtn").disabled = false;
+        }
+
+        /* ===================================
+        UI DISPLAY HELPERS
+        =================================== */
+        function showLoader() { document.getElementById("loadingOverlay").style.display = "flex"; }
+        function hideLoader() { document.getElementById("loadingOverlay").style.display = "none"; }
+        function toast(msg) {
+            const t = document.createElement("div");
+            t.className = "toast"; t.innerText = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 2500);
+        }
+
+        window.onload = function() {
+            if(API_URL === "YOUR_SPREADSHEET_WEB_APP_URL_HERE") {
+                document.getElementById("bulkProgress").innerHTML = "<b style='color:red;'>Warning: Line 57 par API_URL set karna anivarya hai!</b>";
+            }
+        };
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Harsidhi Ventures - Labour Account Ledger</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Inter, sans-serif }
+        body { background: #f3f6fb; min-height: 100vh; color: #1f2937; padding: 20px; }
+        .container { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+        
+        .header-panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,.02); display: flex; flex-direction: column; gap: 15px; }
+        .filter-row { display: grid; grid-template-columns: repeat(3, 1fr) auto; gap: 12px; align-items: end; }
+        .input, select { height: 42px; padding: 0 12px; border: 1px solid #dbe2ea; border-radius: 10px; outline: none; background: #fff; font-size: 14px; }
+        
+        .summary-boxes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 5px; }
+        .sum-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; text-align: center; }
+        .sum-card h4 { font-size: 12px; color: #64748b; text-transform: uppercase; }
+        .sum-card .big { font-size: 20px; font-weight: 700; margin-top: 4px; }
+
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb; }
+        th { background: #f8fafc; color: #475569; font-weight: 600; padding: 12px 14px; border-bottom: 1px solid #e2e8f0; }
+        td { padding: 12px 14px; border-bottom: 1px solid #f1f5f9; }
+        
+        /* Red / Green Financial Badges */
+        .mark-unpaid { background: #fee2e2; color: #991b1b; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; display: inline-block; }
+        .mark-paid { background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; display: inline-block; }
+        
+        .btn { border: none; border-radius: 8px; padding: 8px 12px; font-size: 12px; font-weight: 600; cursor: pointer; }
+        .btn-pay { background: #2563eb; color: #fff; }
+        .btn-trigger { background: #1e3a8a; color: white; height: 42px; padding: 0 20px; border-radius: 10px; }
+        
+        /* Settlement Popup Design */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(2px); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 24px; border-radius: 16px; width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #111827; color: #fff; padding: 12px 16px; border-radius: 12px; z-index: 9999; font-size: 13px; }
+        #loadingOverlay { display: none; position: fixed; inset: 0; background: rgba(255, 255, 255, .85); backdrop-filter: blur(4px); z-index: 99999; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: #2563eb }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Control Header & Search Filters -->
+        <div class="header-panel">
+            <h2 style="font-size:18px; color:#1e3a8a;">📊 Labour Khata & Financial Settlement Board</h2>
+            <div class="filter-row">
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                    <label style="font-size:11px; font-weight:600; color:#64748b;">Select Labour</label>
+                    <select id="filterName"><option value="">-- All Labours --</option></select>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                    <label style="font-size:11px; font-weight:600; color:#64748b;">Filter Specific Date</label>
+                    <input type="date" id="filterDate" class="input">
+                </div>
+                <button class="btn btn-trigger" onclick="fetchLedger()">🔍 Fetch Account Statements</button>
+            </div>
+
+            <!-- Dynamic Aggregations Bar -->
+            <div class="summary-boxes">
+                <div class="sum-card" style="border-top: 3px solid #2563eb;"><h4>Total Work Done Amount</h4><div class="big" id="sumWork">₹0.00</div></div>
+                <div class="sum-card" style="border-top: 3px solid #e11d48;"><h4>Advance Cash Disbursed</h4><div class="big" id="sumAdvance">₹0.00</div></div>
+                <div class="sum-card" style="border-top: 3px solid #d97706;" id="netCard"><h4>Net Payable Pending</h4><div class="big" id="sumNetPending">₹0.00</div></div>
+            </div>
+        </div>
+
+        <!-- Ledger Log Table View -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Labour Name</th>
+                    <th>SKU Type</th>
+                    <th>Qty / Amt</th>
+                    <th>Rate</th>
+                    <th>Gross Total</th>
+                    <th>Transaction Status</th>
+                    <th style="text-align: center;">Action Settlement</th>
+                </tr>
+            </thead>
+            <tbody id="ledgerTableBody">
+                <tr><td colspan="8" style="text-align:center; padding:30px; color:gray; font-style:italic;">Choose structural parameters above to query operations history.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Settlement Execution Drop Modal -->
+    <div id="paymentModal" class="modal">
+        <div class="modal-content">
+            <h3 style="color:#1e3a8a; font-size:15px; border-bottom:1px solid #eee; padding-bottom:6px;">💳 Close Outstanding Bill Row</h3>
+            <input type="hidden" id="modalRowId">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+                <label style="font-size:12px; font-weight:600;">Payment Date</label>
+                <input type="date" id="modalPayDate" class="input">
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+                <label style="font-size:12px; font-weight:600;">Settlement Disbursed Amount (₹)</label>
+                <input type="number" id="modalPayAmt" class="input" placeholder="₹ Amount">
+            </div>
+            <div style="display:flex; gap:8px; margin-top:5px;">
+                <button class="btn btn-pay" style="flex:1; background:#10b981;" onclick="submitPaymentSettlement()">Mark Status as Done (Paid)</button>
+                <button class="btn" style="flex:1; background:#ef4444; color:white;" onclick="document.getElementById('paymentModal').style.display='none'">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="loadingOverlay">Syncing Financial Ledgers...</div>
+
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbyBR10FMSEz7trq0JUkEZwKRv64AlIX0D5ZZn4LXe7zvMsU1rr66CN8RZ6AbSE_2x8o/exec";
+
+        async function loadDropdowns() {
+            try {
+                const res = await fetch(`${API_URL}?action=getLabourNames`);
+                const data = await res.json();
+                if(data.names) {
+                    const select = document.getElementById("filterName");
+                    data.names.forEach(n => select.innerHTML += `<option value="${n}">${n}</option>`);
+                }
+            } catch(e){}
+        }
+
+        async function fetchLedger() {
+            const name = document.getElementById("filterName").value;
+            const date = document.getElementById("filterDate").value;
+
+            showLoader();
+            try {
+                const url = `${API_URL}?action=getLabourLedger&name=${encodeURIComponent(name)}&date=${encodeURIComponent(date)}`;
+                const response = await fetch(url);
+                const result = await response.json();
+                hideLoader();
+
+                if(result.success) {
+                    renderLedgerRows(result.rows || []);
+                }
+            } catch(e) { hideLoader(); toast("Error communicating with servers."); }
+        }
+
+        function renderLedgerRows(rows) {
+            const tbody = document.getElementById("ledgerTableBody");
+            if(rows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:gray;">No match ledgers data grid components found on this segment selection.</td></tr>`;
+                return;
+            }
+
+            let html = "";
+            let grossWork = 0, grossAdvance = 0, grossPaidTotal = 0;
+
+            rows.forEach(r => {
+                let statusMark = "", actionButton = "";
+                
+                if(r.type === "Advance") {
+                    grossAdvance += r.total;
+                    statusMark = `<span class="mark-paid">Advance Paid</span>`;
+                    actionButton = `<span style="color:gray; font-size:11px;">N/A (Cash Out)</span>`;
+                } else {
+                    grossWork += r.total;
+                    if(r.status === "Paid") {
+                        grossPaidTotal += r.paidAmount;
+                        statusMark = `<span class="mark-paid">✅ Paid (${r.payDate})</span>`;
+                        actionButton = `<span style="color:gray; font-size:11px;">Settled (₹${r.paidAmount})</span>`;
+                    } else {
+                        statusMark = `<span class="mark-unpaid">❌ Pending (Unpaid)</span>`;
+                        actionButton = `<button class="btn btn-pay" onclick="openPaymentModal('${r.rowId}', '${r.total}')">Clear Bill</button>`;
+                    }
+                }
+
+                html += `
+                    <tr>
+                        <td>${r.date}</td>
+                        <td><b>${r.labourName}</b></td>
+                        <td><code>${r.sku}</code></td>
+                        <td>${r.qty} ${r.type==='Inward'?'Pcs':'₹'}</td>
+                        <td>${r.type==='Inward'?'₹'+r.rate:'-'}</td>
+                        <td style="font-weight:600;">₹${r.total.toFixed(2)}</td>
+                        <td>${statusMark}</td>
+                        <td style="text-align:center;">${actionButton}</td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+
+            // Calculations for Dynamic Math Aggregation Blocks
+            let netPending = grossWork - grossPaidTotal - grossAdvance;
+            document.getElementById("sumWork").innerText = `₹${grossWork.toFixed(2)}`;
+            document.getElementById("sumAdvance").innerText = `₹${grossAdvance.toFixed(2)}`;
+            document.getElementById("sumNetPending").innerText = `₹${netPending.toFixed(2)}`;
+        }
+
+        function openPaymentModal(rowId, totalAmt) {
+            document.getElementById("modalRowId").value = rowId;
+            document.getElementById("modalPayAmt").value = totalAmt;
+            document.getElementById("modalPayDate").value = new Date().toISOString().split('T')[0];
+            document.getElementById("paymentModal").style.display = "flex";
+        }
+
+        async function submitPaymentSettlement() {
+            const rowId = document.getElementById("modalRowId").value;
+            const amt = document.getElementById("modalPayAmt").value;
+            const pDate = document.getElementById("modalPayDate").value;
+
+            if(!pDate || !amt) { toast("Fields are mandatory."); return; }
+
+            document.getElementById("paymentModal").style.display = "none";
+            showLoader();
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({
+                        action: "processLabourPayment",
+                        payload: { rowId: rowId, paymentDate: pDate, paidAmount: amt }
+                    })
+                });
+                const res = await response.json();
+                hideLoader();
+                if(res.success) {
+                    toast("🎉 Payment Marked as Paid!");
+                    fetchLedger(); // Instantly update ledger balances
+                }
+            } catch(e) { hideLoader(); toast("Payment assignment error."); }
+        }
+
+        function showLoader() { document.getElementById("loadingOverlay").style.display = "flex"; }
+        function hideLoader() { document.getElementById("loadingOverlay").style.display = "none"; }
+        function toast(msg) {
+            const t = document.createElement("div"); t.className = "toast"; t.innerText = msg;
+            document.body.appendChild(t); setTimeout(() => t.remove(), 2500);
+        }
+
+        window.onload = function() { loadDropdowns(); };
+    </script>
+</body>
+</html>
