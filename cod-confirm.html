@@ -323,7 +323,7 @@
   }
 
   /* =====================================================
-     ONCE A COPY SYSTEM LOGIC ENGINE WITH OVERWRITE BLOCK
+     ONCE A COPY SYSTEM LOGIC ENGINE WITH CONFIRMATION TEXT
   ===================================================== */
   async function executeOnceCopyLog() {
     const orderId = document.getElementById("orderId").value.trim();
@@ -356,11 +356,14 @@
         }
       });
 
-      const textMessage = `Hello ${customerName},\n\nThank you for ordering with us. Your Order ID is ${orderId}.\n\nFollowing items are confirmed in your parcel:${productDetailsText}\n\nRegards,\nNXSKIN`;
+      // =====================================================
+      // NEW CUSTOMER CONFIRMATION MESSAGE FORMAT (YES / NO REPLY)
+      // =====================================================
+      const textMessage = `Hello ${customerName},\n\nThank you for shopping with us! We have received your order *${orderId}*.\n\nBefore we pack and dispatch your parcel, please verify the ordered items below:${productDetailsText}\n\n*Please reply to this message with:*\n👉 *YES* - If details are correct and you want to confirm shipping.\n👉 *NO* - If you want to modify or cancel this order.\n\nWe request you to kindly reply at your earliest convenience so we can dispatch your order quickly.\n\nRegards,\n*NXSKIN*`;
 
       // Step B: Copy to clipboard engine native implementation
       navigator.clipboard.writeText(textMessage).then(async () => {
-        showBanner("Message Copied to Clipboard successfully!", "success");
+        showBanner("Confirmation Message Copied to Clipboard!", "success");
         
         // Once a copy enforcement: disable button immediately
         const btn = document.getElementById("copyMessageBtn");
