@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manual Order & Copy Confirmation Manager</title>
+  <style>
+    :root {
+      --primary: #1a365d;
+      --secondary: #2b6cb0;
+      --success: #38a169;
+      --warning: #dd6b20;
+      --danger: #e53e3e;
+      --bg: #f7fafc;
+      --card-bg: #ffffff;
+      --text: #2d3748;
+      --border: #cbd5e0;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 20px auto;
+      background: var(--card-bg);
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+      border-top: 5px solid var(--primary);
+    }
+    h2, h3 {
+      color: var(--primary);
+      margin-top: 0;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+    .form-group.full-width {
+      grid-column: span 2;
+    }
+    label {
+      margin-bottom: 6px;
+      font-weight: 500;
+      font-size: 0.95rem;
+    }
+    input[type="text"], input[type="tel"], input[type="number"] {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+    input:focus {
+      border-color: var(--secondary);
+      outline: none;
+    }
+    
+    /* SKU dynamic area */
+    .sku-section {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .sku-row-input {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .sku-row-input input { flex: 1; }
+    .qty-box { width: 80px !important; text-align: center; }
+    .qty-btn {
+      background: #edf2f7;
+      border: 1px solid var(--border);
+      width: 34px;
+      height: 34px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .remove-btn {
+      background: var(--danger);
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .add-sku-btn {
+      background: #edf2f7;
+      color: var(--primary);
+      border: 1px dashed var(--primary);
+      padding: 8px 15px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .copy-btn {
+      background-color: var(--secondary);
+      color: white;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      font-weight: 600;
+      width: 100%;
+      transition: background 0.2s;
+    }
+    .copy-btn:disabled {
+      background-color: #cbd5e0;
+      color: #718096;
+      cursor: not-allowed;
+    }
+
+    /* Tabs Styling like Google Sheet */
+    .sheet-container {
+      margin-top: 40px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .sheet-tabs {
+      background: #edf2f7;
+      display: flex;
+      border-bottom: 1px solid var(--border);
+    }
+    .tab-link {
+      padding: 12px 25px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: #4a5568;
+      border-right: 1px solid var(--border);
+    }
+    .tab-link.active {
+      background: white;
+      color: var(--secondary);
+      border-bottom: 2px solid var(--secondary);
+    }
+    
+    .table-wrapper {
+      max-height: 400px;
+      overflow-y: auto;
+      background: white;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+    th, td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    th {
+      background: #f7fafc;
+      position: sticky;
+      top: 0;
+      font-weight: 600;
+      color: #4a5568;
+    }
+    .action-badge {
+      background: var(--warning);
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .action-badge:hover { background: #c05621; }
+    .status-confirmed {
+      color: var(--success);
+      font-weight: bold;
+    }
+    
+    .status-banner {
+      padding: 12px;
+      margin-bottom: 15px;
+      border-radius: 6px;
+      display: none;
+      font-weight: 500;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Manual Order Confirmation Tool</h2>
+  
+  <div id="statusBanner" class="status-banner"></div>
+
+  <!-- Form Fields Grid -->
+  <div class="form-grid">
+    <div class="form-group">
+      <label>Order ID</label>
+      <input type="text" id="orderId" placeholder="e.g. #1085">
+    </div>
+    <div class="form-group">
+      <label>Customer Name</label>
+      <input type="text" id="customerName" placeholder="Customer Full Name">
+    </div>
+    <div class="form-group full-width">
+      <label>Customer Mobile Number (e.g. 919876543210)</label>
+      <input type="tel" id="customerMobile" placeholder="91">
+    </div>
+  </div>
+
+  <!-- Dynamic SKU Addition Block -->
+  <div class="sku-section">
+    <h3 style="font-size: 1rem; margin-bottom: 10px;">Products / SKUs</h3>
+    <div id="skuInputsContainer">
+      <!-- Default single row -->
+      <div class="sku-row-input" id="skuRow-0">
+        <input type="text" class="sku-code-field" placeholder="Enter Product SKU">
+        <button class="qty-btn" onclick="adjustInputQty(0, -1)">-</button>
+        <input type="number" class="qty-field qty-box" value="1" min="1">
+        <button class="qty-btn" onclick="adjustInputQty(0, 1)">+</button>
+        <button class="remove-btn" onclick="removeSkuRow(0)">Delete</button>
+      </div>
+    </div>
+    <button class="add-sku-btn" onclick="addSkuRow()" style="margin-top: 10px;">+ Add Another SKU</button>
+  </div>
+
+  <button class="copy-btn" id="copyMessageBtn" onclick="executeOnceCopyLog()">Copy Message</button>
+
+  <!-- Google Sheet Styled Dual Tabs Grid Layout -->
+  <div class="sheet-container">
+    <div class="sheet-tabs">
+      <button class="tab-link active" onclick="switchTab('Pending')">Pending Orders</button>
+      <button class="tab-link" onclick="switchTab('Confirmed')">Confirmed Orders</button>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Date/Time</th>
+            <th>Order ID</th>
+            <th>Customer Name</th>
+            <th>Mobile</th>
+            <th>Message Details</th>
+            <th>Action Status</th>
+          </tr>
+        </thead>
+        <tbody id="sheetTableBody">
+          <!-- Rows injected dynamically via API responses -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Apni Deploy ki hui Google Web App URL yahan lagayein
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwux1ZQjb-wgV9e1kJqgDY6oHXlLfyFZHd0dOAXkbacDAb1aCoUtIv_o0vAsaBylJ7csA/exec"; 
+  let skuRowCount = 1;
+  let allLogs = [];
+  let currentActiveTab = "Pending";
+
+  // Load active lists on launch window lifecycle
+  window.onload = function() {
+    fetchLogsFromServer();
+  };
+
+  function showBanner(text, type) {
+    const banner = document.getElementById("statusBanner");
+    banner.innerText = text;
+    banner.style.display = "block";
+    banner.style.background = type === "error" ? "#fed7d7" : "#c6f6d5";
+    banner.style.color = type === "error" ? "#9b2c2c" : "#22543d";
+  }
+
+  /* =====================================================
+     DYNAMIC SKU INPUT CONTROLS (+ / - / ADD / REMOVE)
+  ===================================================== */
+  function addSkuRow() {
+    const container = document.getElementById("skuInputsContainer");
+    const uniqueId = skuRowCount++;
+    const row = document.createElement("div");
+    row.className = "sku-row-input";
+    row.id = `skuRow-${uniqueId}`;
+    row.innerHTML = `
+      <input type="text" class="sku-code-field" placeholder="Enter Product SKU">
+      <button class="qty-btn" onclick="adjustInputQty(${uniqueId}, -1)">-</button>
+      <input type="number" class="qty-field qty-box" value="1" min="1">
+      <button class="qty-btn" onclick="adjustInputQty(${uniqueId}, 1)">+</button>
+      <button class="remove-btn" onclick="removeSkuRow(${uniqueId})">Delete</button>
+    `;
+    container.appendChild(row);
+  }
+
+  function removeSkuRow(id) {
+    const row = document.getElementById(`skuRow-${id}`);
+    if(row) row.remove();
+  }
+
+  function adjustInputQty(id, delta) {
+    const row = document.getElementById(`skuRow-${id}`);
+    const qtyField = row.querySelector(".qty-field");
+    let currentVal = parseInt(qtyField.value) || 1;
+    if(currentVal + delta >= 1) {
+      qtyField.value = currentVal + delta;
+    }
+  }
+
+  /* =====================================================
+     ONCE A COPY SYSTEM LOGIC ENGINE WITH OVERWRITE BLOCK
+  ===================================================== */
+  async function executeOnceCopyLog() {
+    const orderId = document.getElementById("orderId").value.trim();
+    const customerName = document.getElementById("customerName").value.trim();
+    const customerMobile = document.getElementById("customerMobile").value.trim();
+
+    if(!orderId || !customerName || !customerMobile) {
+      return alert("Please fill Order ID, Name and Mobile Number fields manually!");
+    }
+
+    // Step A: Verification Server Rule Check for Duplicate Copies
+    try {
+      const dCheck = await fetch(`${WEB_APP_URL}?action=checkManualDuplicate&customerMobile=${customerMobile}&orderId=${orderId}`);
+      const dRes = await dCheck.json();
+      
+      if(dRes.success && dRes.isDuplicate) {
+        showBanner("Warning: Is Mobile/Order ID ka message pehle hi copy ho chuka hai!", "error");
+        alert("Baar baar ek hi customer ka message copy karna blocked hai!");
+        return;
+      }
+
+      // Read all SKU inputs line items
+      let productDetailsText = "";
+      const skuRows = document.querySelectorAll(".sku-row-input");
+      skuRows.forEach(row => {
+        const skuCode = row.querySelector(".sku-code-field").value.trim();
+        const qtyVal = row.querySelector(".qty-field").value;
+        if(skuCode) {
+          productDetailsText += `\n- ${skuCode} (Qty: ${qtyVal})`;
+        }
+      });
+
+      const textMessage = `Hello ${customerName},\n\nThank you for ordering with us. Your Order ID is ${orderId}.\n\nFollowing items are confirmed in your parcel:${productDetailsText}\n\nRegards,\nNXSKIN`;
+
+      // Step B: Copy to clipboard engine native implementation
+      navigator.clipboard.writeText(textMessage).then(async () => {
+        showBanner("Message Copied to Clipboard successfully!", "success");
+        
+        // Once a copy enforcement: disable button immediately
+        const btn = document.getElementById("copyMessageBtn");
+        btn.disabled = true;
+        btn.innerText = "Copied & Locked (Unique Entry)";
+
+        // Step C: Document state update inside Google Sheets via POST
+        await fetch(WEB_APP_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: "saveManualLog",
+            payload: {
+              orderId: orderId,
+              customerName: customerName,
+              customerMobile: customerMobile,
+              messageDetails: textMessage
+            }
+          })
+        });
+
+        // Refresh database tables layout logs visually
+        setTimeout(fetchLogsFromServer, 1500);
+
+      }).catch(err => {
+        alert("Clipboard accessibility failure: " + err);
+      });
+
+    } catch (e) {
+      showBanner("Server pipeline error: " + e.toString(), "error");
+    }
+  }
+
+  /* =====================================================
+     FETCH AND RENDER LOGS INTO DUAL SHEET TABS GIRD 
+  ===================================================== */
+  async function fetchLogsFromServer() {
+    try {
+      const response = await fetch(`${WEB_APP_URL}?action=getMessageLogs`);
+      const res = await response.json();
+      if(res.success) {
+        allLogs = res.rows;
+        renderSheetTable();
+      }
+    } catch (err) {
+      console.log("Error reading directory rows: " + err);
+    }
+  }
+
+  function renderSheetTable() {
+    const tbody = document.getElementById("sheetTableBody");
+    tbody.innerHTML = "";
+    
+    // Filter rows according to user tab configurations (Pending vs Confirmed)
+    const filteredRows = allLogs.filter(row => row.status.toLowerCase() === currentActiveTab.toLowerCase());
+    
+    if(filteredRows.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#a0aec0;">No records found in this sheet category tab.</td></tr>`;
+      return;
+    }
+
+    filteredRows.forEach(row => {
+      const tr = document.createElement("tr");
+      
+      let actionColumnHtml = "";
+      if(row.status.toLowerCase() === "pending") {
+        // Pending me dynamic Action Key trigger click point shift functionality ke sath
+        actionColumnHtml = `<button class="action-badge" onclick="shiftStatusToConfirmed(${row.rowId})">Mark Confirm</button>`;
+      } else {
+        actionColumnHtml = `<span class="status-confirmed">✓ Confirmed</span>`;
+      }
+
+      tr.innerHTML = `
+        <td>${row.timestamp}</td>
+        <td><strong>${row.orderId}</strong></td>
+        <td>${row.customerName}</td>
+        <td>${row.customerMobile}</td>
+        <td style="white-space: pre-line; max-width: 250px; font-size: 0.85rem; color: #4a5568;">${row.messageDetails}</td>
+        <td>${actionColumnHtml}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function switchTab(tabName) {
+    currentActiveTab = tabName;
+    
+    // UI tabs state toggle classes adjustments
+    const tabs = document.querySelectorAll(".tab-link");
+    tabs.forEach(t => {
+      if(t.innerText.includes(tabName)) t.classList.add("active");
+      else t.classList.remove("active");
+    });
+    
+    renderSheetTable();
+  }
+
+  // Action Key press to update sheet line row index and shift tabs visually
+  async function shiftStatusToConfirmed(rowId) {
+    showBanner("Updating entry cell allocation rules...", "success");
+    try {
+      await fetch(WEB_APP_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: "updateLogStatus",
+          rowId: rowId,
+          status: "Confirmed"
+        })
+      });
+
+      showBanner("Row shifted from Pending to Confirmed Tab successfully!", "success");
+      
+      // Reload states maps grid
+      setTimeout(fetchLogsFromServer, 1000);
+    } catch (err) {
+      showBanner("Failed shifting log items status: " + err.toString(), "error");
+    }
+  }
+</script>
+
+</body>
+</html>
